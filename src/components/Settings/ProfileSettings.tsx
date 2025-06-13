@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
 import type { UserProfile } from '../../types';
 
 const HEALTH_GOALS = [
@@ -50,7 +49,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   onProfileUpdate,
   existingProfile 
 }) => {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -97,45 +95,20 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   // Load existing profile from database on component mount
   useEffect(() => {
     const loadExistingProfile = async () => {
-      if (!isSupabaseConfigured() || !user) {
-        // If no authenticated user, try to load from localStorage
-        const savedProfile = localStorage.getItem('healthcoach-profile');
-        if (savedProfile) {
-          try {
-            const profile = JSON.parse(savedProfile);
-            setFormData({
-              name: profile.name || '',
-              email: profile.email || 'user@healthcoach.ai',
-              age: profile.age ? profile.age.toString() : '',
-              gender: profile.gender || 'other',
-              height_feet: profile.height_feet ? profile.height_feet.toString() : '',
-              height_inches: profile.height_inches ? profile.height_inches.toString() : '',
-              weight: profile.weight ? profile.weight.toString() : '',
-              activity_level: profile.activity_level || 'moderate',
-              health_goals: profile.health_goals || [],
-              dietary_restrictions: profile.dietary_restrictions || [],
-              allergies: profile.allergies || [],
-              current_habits: profile.current_habits || ''
-            });
-          } catch (err) {
-            console.log('Error loading profile from localStorage:', err);
-          }
-        }
-        return;
-      }
+      if (!isSupabaseConfigured()) return;
       
       try {
-        // Load profile for authenticated user
+        // Try to find existing profile by email
         const { data, error } = await supabase
           .from('user_profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('email', 'user@healthcoach.ai')
           .maybeSingle();
 
         if (data && !error) {
           setFormData({
             name: data.name || '',
-            email: data.email || user.email || 'user@healthcoach.ai',
+            email: data.email || 'user@healthcoach.ai',
             age: data.age ? data.age.toString() : '',
             gender: data.gender || 'other',
             height_feet: data.height_feet ? data.height_feet.toString() : '',
@@ -157,7 +130,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       loadExistingProfile();
       setInitialLoad(false);
     }
-  }, [initialLoad, existingProfile, user]);
+  }, [initialLoad, existingProfile]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -254,14 +227,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         updated_at: new Date().toISOString()
       };
 
-      // Only attempt database operations if we have an authenticated user
-      if (isSupabaseConfigured() && user) {
+      if (isSupabaseConfigured()) {
+        // Save to database using upsert based on email
         try {
-          // Check if profile already exists for this user
+          // Generate a UUID for user_id (since we're not using auth)
+          const userId = crypto.randomUUID();
+          
+          // First, try to find existing profile by email
           const { data: existingData, error: findError } = await supabase
             .from('user_profiles')
             .select('*')
-            .eq('user_id', user.id)
+            .eq('email', formData.email.trim().toLowerCase())
             .maybeSingle();
 
           let result;
@@ -270,17 +246,17 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             result = await supabase
               .from('user_profiles')
               .update(profileData)
-              .eq('user_id', user.id)
+              .eq('email', formData.email.trim().toLowerCase())
               .select()
               .single();
           } else {
-            // Insert new profile with authenticated user's ID
+            // Insert new profile
             result = await supabase
               .from('user_profiles')
               .insert({
                 ...profileData,
-                user_id: user.id, // Use authenticated user's ID
-                subscription_status: 'premium',
+                user_id: userId, // Use generated UUID
+                subscription_status: 'premium', // Give premium access for testing
                 interviews_remaining: 999,
                 created_at: new Date().toISOString()
               })
@@ -301,10 +277,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         }
       }
 
-      // Always save to localStorage as backup
+      // Also save to localStorage as backup
       const fullProfileData: UserProfile = {
         id: existingProfile?.id || 'profile-' + Date.now(),
-        user_id: user?.id || 'open-access-user',
+        user_id: 'open-access-user',
         ...profileData,
         created_at: existingProfile?.created_at || new Date().toISOString()
       };
@@ -383,14 +359,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     Profile saved successfully! 
                     {isProfileComplete() && ' Your profile is now complete.'}
                   </p>
-                  {isSupabaseConfigured() && user && (
+                  {isSupabaseConfigured() && (
                     <p className="text-green-600 text-sm mt-1">
                       ✓ Saved to database and local storage
                     </p>
                   )}
-                  {(!isSupabaseConfigured() || !user) && (
+                  {!isSupabaseConfigured() && (
                     <p className="text-green-600 text-sm mt-1">
-                      ✓ Saved to local storage {!user && '(no authenticated user)'}
+                      ✓ Saved to local storage (database not configured)
                     </p>
                   )}
                 </div>
@@ -417,23 +393,21 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
           {/* Database Status */}
           <div className={`p-4 rounded-lg border ${
-            isSupabaseConfigured() && user
+            isSupabaseConfigured()
               ? 'bg-blue-50 border-blue-200' 
               : 'bg-gray-50 border-gray-200'
           }`}>
             <div className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-3 ${
-                isSupabaseConfigured() && user ? 'bg-green-500' : 'bg-gray-400'
+                isSupabaseConfigured() ? 'bg-green-500' : 'bg-gray-400'
               }`}></div>
               <p className={`text-sm font-medium ${
-                isSupabaseConfigured() && user ? 'text-blue-800' : 'text-gray-700'
+                isSupabaseConfigured() ? 'text-blue-800' : 'text-gray-700'
               }`}>
                 Database: {
-                  isSupabaseConfigured() && user
-                    ? 'Connected (Authenticated User)' 
-                    : !user 
-                      ? 'Local storage only (no authenticated user)'
-                      : 'Not configured (using local storage)'
+                  isSupabaseConfigured() 
+                    ? 'Connected (Open Access Mode)' 
+                    : 'Not configured (using local storage)'
                 }
               </p>
             </div>
