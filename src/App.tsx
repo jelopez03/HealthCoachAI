@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { AuthForm } from './components/Auth/AuthForm';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ChatInterface } from './components/Chat/ChatInterface';
 import { ProfileSettings } from './components/Settings/ProfileSettings';
@@ -13,44 +11,63 @@ import { PhotoAnalysis } from './components/AI/PhotoAnalysis';
 import { SmartGroceryList } from './components/AI/SmartGroceryList';
 import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
 import { WalkthroughModal } from './components/Onboarding/WalkthroughModal';
-import { useAuth } from './contexts/AuthContext';
-import type { Conversation } from './types';
+import type { Conversation, User, UserProfile } from './types';
 
-const AppContent: React.FC = () => {
-  const { user, profile, loading } = useAuth();
+// Create a mock user for open access
+const mockUser: User = {
+  id: 'open-access-user',
+  email: 'user@healthcoach.ai',
+  created_at: new Date().toISOString(),
+  subscription_status: 'premium' // Give premium access for testing
+};
+
+const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
-  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list'>('chat');
+  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list'>('profile'); // Start with profile
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
-  // Check if profile is complete
+  // Load profile from localStorage on mount
   useEffect(() => {
-    if (profile) {
-      const isComplete = !!(
-        profile.name?.trim() &&
-        profile.email?.trim() &&
-        profile.age &&
-        profile.height_feet &&
-        profile.height_inches &&
-        profile.weight &&
-        profile.health_goals?.length > 0
-      );
-      setProfileCompleted(isComplete);
+    const savedProfile = localStorage.getItem('healthcoach-profile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfile(parsedProfile);
+        
+        // Check if profile is complete
+        const isComplete = !!(
+          parsedProfile.name?.trim() &&
+          parsedProfile.email?.trim() &&
+          parsedProfile.age &&
+          parsedProfile.height_feet &&
+          parsedProfile.height_inches &&
+          parsedProfile.weight &&
+          parsedProfile.health_goals?.length > 0
+        );
+        setProfileCompleted(isComplete);
+        
+        // If profile is complete, show chat page instead
+        if (isComplete) {
+          setCurrentPage('chat');
+        }
+      } catch (error) {
+        console.error('Error parsing saved profile:', error);
+      }
     }
-  }, [profile]);
+  }, []);
 
   // Check if this is the user's first visit
   useEffect(() => {
-    if (user && !loading) {
-      const hasVisited = localStorage.getItem(`healthcoach-visited-${user.id}`);
-      
-      if (!hasVisited) {
-        setShowWalkthrough(true);
-        localStorage.setItem(`healthcoach-visited-${user.id}`, 'true');
-      }
+    const hasVisited = localStorage.getItem('healthcoach-visited');
+    
+    if (!hasVisited && profileCompleted) {
+      setShowWalkthrough(true);
+      localStorage.setItem('healthcoach-visited', 'true');
     }
-  }, [user, loading]);
+  }, [profileCompleted]);
 
   const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => {
     setCurrentPage(page);
@@ -69,34 +86,39 @@ const AppContent: React.FC = () => {
     setShowPremiumUpgrade(false);
   };
 
-  const handleProfileComplete = () => {
+  const handleProfileComplete = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
     setProfileCompleted(true);
+    
+    // Save to localStorage
+    localStorage.setItem('healthcoach-profile', JSON.stringify(updatedProfile));
+    
+    // Navigate to chat after profile completion
+    setCurrentPage('chat');
+    
+    // Show walkthrough for first-time users
+    const hasVisited = localStorage.getItem('healthcoach-visited');
+    if (!hasVisited) {
+      setShowWalkthrough(true);
+      localStorage.setItem('healthcoach-visited', 'true');
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-sky-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Loading HealthCoach AI</h2>
-          <p className="text-gray-600">Setting up your personalized experience...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthForm />;
-  }
+  const handleProfileUpdate = (updatedProfile: UserProfile) => {
+    setProfile(updatedProfile);
+    localStorage.setItem('healthcoach-profile', JSON.stringify(updatedProfile));
+  };
 
   const renderMainContent = () => {
     switch (currentPage) {
       case 'profile':
-        return <ProfileSettings onProfileComplete={handleProfileComplete} />;
+        return (
+          <ProfileSettings 
+            onProfileComplete={handleProfileComplete}
+            onProfileUpdate={handleProfileUpdate}
+            existingProfile={profile}
+          />
+        );
       case 'preferences':
         return <Preferences />;
       case 'reports':
@@ -137,6 +159,12 @@ const AppContent: React.FC = () => {
                     <li>• Progress tracking and motivation</li>
                   </ul>
                 </div>
+                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                  <p className="text-sm text-emerald-800">
+                    <strong>🎯 Open Access:</strong> This is a fully functional demo of HealthCoach AI. 
+                    All features are available for testing and exploration.
+                  </p>
+                </div>
                 {!profileCompleted && (
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
                     <p className="text-sm text-amber-800">
@@ -167,40 +195,48 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex bg-gray-50">
-      <Sidebar
-        currentConversation={currentConversation}
-        onConversationSelect={setCurrentConversation}
-        onNewConversation={() => setCurrentConversation(null)}
-        onNavigate={handleNavigate}
-        currentPage={currentPage}
-        user={user}
-        profile={profile}
-        profileCompleted={profileCompleted}
-      />
-      
-      <div className="flex-1 flex flex-col">
-        {/* Header with Bolt Badge */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-end">
-          <div className="flex items-center">
-            <a 
-              href="https://bolt.new/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="block"
-            >
-              <img 
-                src="/black_circle_360x360.png" 
-                alt="Powered by Bolt" 
-                className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
-                title="Powered by Bolt - Click to visit bolt.new"
-              />
-            </a>
-          </div>
-        </div>
+    <Router>
+      <div className="h-screen flex bg-gray-50">
+        <Sidebar
+          currentConversation={currentConversation}
+          onConversationSelect={setCurrentConversation}
+          onNewConversation={() => setCurrentConversation(null)}
+          onNavigate={handleNavigate}
+          currentPage={currentPage}
+          user={mockUser}
+          profile={profile}
+          profileCompleted={profileCompleted}
+        />
         
-        <div className="flex-1">
-          {renderMainContent()}
+        <div className="flex-1 flex flex-col">
+          {/* Header with Bolt Badge */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-xl font-semibold text-gray-800">HealthCoach AI</h1>
+              <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full font-medium">
+                Open Access Demo
+              </span>
+            </div>
+            <div className="flex items-center">
+              <a 
+                href="https://bolt.new/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <img 
+                  src="/black_circle_360x360.png" 
+                  alt="Powered by Bolt" 
+                  className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
+                  title="Powered by Bolt - Click to visit bolt.new"
+                />
+              </a>
+            </div>
+          </div>
+          
+          <div className="flex-1">
+            {renderMainContent()}
+          </div>
         </div>
       </div>
 
@@ -219,17 +255,7 @@ const AppContent: React.FC = () => {
         onNavigate={handleNavigate}
         profileCompleted={profileCompleted}
       />
-    </div>
-  );
-};
-
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
+    </Router>
   );
 };
 

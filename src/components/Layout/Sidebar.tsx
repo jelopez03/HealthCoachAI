@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle, LogOut } from 'lucide-react';
+import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle } from 'lucide-react';
 import { PremiumUpgrade } from '../Premium/PremiumUpgrade';
-import { useAuth } from '../../contexts/AuthContext';
 import type { Conversation, User as UserType, UserProfile } from '../../types';
 
 interface SidebarProps {
@@ -35,7 +34,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   profile,
   profileCompleted = false
 }) => {
-  const { signOut } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
@@ -93,14 +91,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setShowPremiumUpgrade(false);
   };
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
-
   const navigationItems = [
     { id: 'chat', label: 'Conversations', icon: MessageSquare, isPremium: false },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
@@ -123,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             <div>
               <h1 className="text-lg font-semibold text-gray-800">HealthCoach AI</h1>
-              <p className="text-sm text-gray-600">Your nutrition companion</p>
+              <p className="text-sm text-gray-600">Open Access Demo</p>
             </div>
           </div>
 
@@ -154,21 +144,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <User className="w-3 h-3 text-white" />
                 </div>
                 <span className="font-medium text-emerald-800">
-                  {profile?.name || user.email.split('@')[0]}
+                  {profile?.name || 'Guest User'}
                 </span>
-                {user.subscription_status === 'premium' && (
-                  <Crown className="w-4 h-4 text-purple-500" />
-                )}
+                <Crown className="w-4 h-4 text-purple-500" />
               </div>
-              <button
-                onClick={handleSignOut}
-                className="text-emerald-600 hover:text-emerald-800 transition-colors"
-                title="Sign out"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
             </div>
-            <p className="text-xs text-emerald-700">{user.email}</p>
+            <p className="text-xs text-emerald-700">{profile?.email || user.email}</p>
           </div>
 
           {/* Navigation */}
@@ -338,26 +319,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Premium Upgrade Footer */}
-        {user.subscription_status !== 'premium' && (
-          <div className="p-4 border-t border-gray-200">
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
-              <div className="flex items-center justify-center space-x-2 mb-2">
-                <Crown className="w-5 h-5 text-purple-600" />
-                <h3 className="font-semibold text-purple-800">Upgrade to Premium</h3>
-              </div>
-              <p className="text-sm text-purple-700 mb-3">
-                Unlock advanced analytics, AI photo analysis, and more
-              </p>
-              <button 
-                onClick={() => setShowPremiumUpgrade(true)}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
-              >
-                View Pricing Plans
-              </button>
+        {/* Demo Info Footer */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Crown className="w-5 h-5 text-purple-600" />
+              <h3 className="font-semibold text-purple-800">Open Access Demo</h3>
             </div>
+            <p className="text-sm text-purple-700 mb-3">
+              All premium features are unlocked for testing
+            </p>
+            <button 
+              onClick={() => setShowPremiumUpgrade(true)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
+            >
+              View Pricing Plans
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Premium Upgrade Modal */}
