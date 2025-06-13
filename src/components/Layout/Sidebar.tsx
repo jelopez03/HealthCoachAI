@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Plus, Settings, Crown, LogOut, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3 } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { HealthCoachingAPI } from '../../services/api';
+import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3 } from 'lucide-react';
 import { PremiumUpgrade } from '../Premium/PremiumUpgrade';
-import type { Conversation } from '../../types';
+import type { Conversation, User as UserType, UserProfile } from '../../types';
 
 interface SidebarProps {
   currentConversation: Conversation | null;
@@ -12,6 +10,8 @@ interface SidebarProps {
   onNewConversation: () => void;
   onNavigate?: (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => void;
   currentPage?: string;
+  user: UserType;
+  profile: UserProfile;
 }
 
 // Helper function to generate valid UUIDs for mock data
@@ -28,14 +28,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onConversationSelect, 
   onNewConversation,
   onNavigate,
-  currentPage = 'chat'
+  currentPage = 'chat',
+  user,
+  profile
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
-  const { user, signOut } = useAuth();
 
-  // Mock data for development when auth is bypassed - using valid UUIDs
+  // Mock conversations for demo
   const mockConversations: Conversation[] = [
     {
       id: '550e8400-e29b-41d4-a716-446655440001',
@@ -64,77 +65,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   useEffect(() => {
-    if (user) {
-      loadConversations();
-    } else {
-      // Use mock data when no user (development mode)
-      setConversations(mockConversations);
-    }
-  }, [user]);
-
-  const loadConversations = async () => {
-    if (!user) return;
-    
-    setLoading(true);
-    try {
-      const userConversations = await HealthCoachingAPI.getConversations(user.id);
-      setConversations(userConversations);
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-      // Fallback to mock data on error
-      setConversations(mockConversations);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Load mock conversations
+    setConversations(mockConversations);
+  }, []);
 
   const handleNewConversation = async () => {
-    if (!user) {
-      // Mock new conversation for development - using valid UUID
-      const newMockConversation: Conversation = {
-        id: generateMockUUID(),
-        user_id: '550e8400-e29b-41d4-a716-446655440000',
-        title: 'New Conversation',
-        message_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      setConversations(prev => [newMockConversation, ...prev]);
-      onNewConversation();
-      onConversationSelect(newMockConversation);
-      return;
-    }
-
-    try {
-      const newConversation = await HealthCoachingAPI.createConversation(
-        user.id,
-        'New Conversation'
-      );
-      setConversations(prev => [newConversation, ...prev]);
-      onNewConversation();
-      onConversationSelect(newConversation);
-    } catch (error) {
-      console.error('Error creating conversation:', error);
-    }
+    // Create mock new conversation
+    const newMockConversation: Conversation = {
+      id: generateMockUUID(),
+      user_id: user.id,
+      title: 'New Conversation',
+      message_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setConversations(prev => [newMockConversation, ...prev]);
+    onNewConversation();
+    onConversationSelect(newMockConversation);
   };
 
   const handleUpgrade = (planId: string) => {
     console.log(`User upgraded to ${planId} plan`);
-    // In a real app, this would update the user's subscription status
     setShowPremiumUpgrade(false);
-  };
-
-  const isPremiumFeature = (feature: string) => {
-    return user?.subscription_status === 'free' && ['unlimited_chats', 'advanced_plans'].includes(feature);
   };
 
   const navigationItems = [
     { id: 'chat', label: 'Conversations', icon: MessageSquare },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, premium: true },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
     { id: 'exercise', label: 'Exercise & Habits', icon: Activity },
-    { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera, premium: true },
-    { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart, premium: true },
-    { id: 'reports', label: 'Weekly Reports', icon: TrendingUp, premium: true },
+    { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera },
+    { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart },
+    { id: 'reports', label: 'Weekly Reports', icon: TrendingUp },
     { id: 'profile', label: 'Profile Settings', icon: User },
     { id: 'preferences', label: 'Preferences', icon: Settings }
   ];
@@ -154,6 +115,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
+          {/* Demo User Info */}
+          <div className="bg-gradient-to-r from-emerald-50 to-sky-50 p-3 rounded-lg mb-4 border border-emerald-200">
+            <div className="flex items-center space-x-2 mb-1">
+              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                <User className="w-3 h-3 text-white" />
+              </div>
+              <span className="font-medium text-emerald-800">{profile.name}</span>
+              <Crown className="w-4 h-4 text-purple-500" />
+            </div>
+            <p className="text-xs text-emerald-700">Demo Mode - All Features Available</p>
+          </div>
+
           {/* Navigation */}
           <div className="space-y-1 mb-4">
             {navigationItems.map((item) => (
@@ -169,9 +142,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center space-x-3">
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
-                  {item.premium && (
-                    <Crown className="w-4 h-4 text-purple-500" />
-                  )}
                 </div>
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -278,48 +248,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Premium Upgrade Banner - Only show for free users */}
-        {(!user || user?.subscription_status === 'free') && (
-          <div className="p-4 border-t border-gray-200">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg p-4 text-white"
-            >
-              <div className="flex items-center space-x-2 mb-2">
-                <Crown className="w-5 h-5" />
-                <h3 className="font-semibold">Upgrade to Premium</h3>
-              </div>
-              <p className="text-sm text-purple-100 mb-3">
-                Unlock analytics, photo analysis, smart grocery lists, and more
-              </p>
-              <button 
-                onClick={() => setShowPremiumUpgrade(true)}
-                className="w-full bg-white text-purple-600 font-medium py-2 rounded-lg hover:bg-purple-50 transition-colors"
-              >
-                View Plans
-              </button>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Bottom Menu */}
-        <div className="p-4 border-t border-gray-200 space-y-2">
-          {user && (
-            <button 
-              onClick={signOut}
-              className="w-full flex items-center space-x-3 p-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Sign Out</span>
-            </button>
-          )}
-          
-          {!user && (
-            <div className="text-center p-3">
-              <p className="text-xs text-gray-500">Development Mode Active</p>
+        {/* Demo Info Footer */}
+        <div className="p-4 border-t border-gray-200">
+          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              <Crown className="w-5 h-5 text-purple-600" />
+              <h3 className="font-semibold text-purple-800">Demo Version</h3>
             </div>
-          )}
+            <p className="text-sm text-purple-700 mb-3">
+              All premium features are unlocked for demonstration
+            </p>
+            <button 
+              onClick={() => setShowPremiumUpgrade(true)}
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
+            >
+              View Pricing Plans
+            </button>
+          </div>
         </div>
       </div>
 

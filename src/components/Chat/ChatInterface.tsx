@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, Video, Volume2, FileText, Utensils, Sparkles, Brain, Target } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
-import { HealthCoachingAPI } from '../../services/api';
 import type { Message, Conversation } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { VideoPlayer } from './VideoPlayer';
@@ -21,9 +19,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation }) =>
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { user, profile } = useAuth();
-
-  // Mock messages for development
+  // Mock messages for demo
   const mockMessages: Message[] = [
     {
       id: '1',
@@ -36,28 +32,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation }) =>
   ];
 
   useEffect(() => {
-    loadMessages();
+    // Load mock messages for demo
+    setMessages(mockMessages);
   }, [conversation.id]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const loadMessages = async () => {
-    try {
-      if (user) {
-        const conversationMessages = await HealthCoachingAPI.getMessages(conversation.id);
-        setMessages(conversationMessages);
-      } else {
-        // Use mock messages in development mode
-        setMessages(mockMessages);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      // Fallback to mock messages
-      setMessages(mockMessages);
-    }
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -234,35 +215,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation }) =>
       // Simulate AI thinking time
       await new Promise(resolve => setTimeout(resolve, 1500 + Math.random() * 1000));
 
-      if (user) {
-        // Send to API and get response
-        const response = await HealthCoachingAPI.sendChatMessage(
-          conversation.id,
-          messageText,
-          profile || undefined
-        );
-
-        // Add AI response to UI
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          conversation_id: conversation.id,
-          role: 'assistant',
-          content: response.message,
-          message_type: response.message_type,
-          metadata: {
-            video_url: response.video_url,
-            audio_url: response.audio_url,
-            meal_plan: response.meal_plan,
-            recipe: response.recipe
-          },
-          created_at: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        // Generate mock response for development
-        const aiMessage = generateMockResponse(messageText);
-        setMessages(prev => [...prev, aiMessage]);
-      }
+      // Generate mock response for demo
+      const aiMessage = generateMockResponse(messageText);
+      setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -358,7 +313,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ conversation }) =>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-800">{conversation.title}</h2>
-            <p className="text-sm text-gray-600">AI Health Coach • Always here to help</p>
+            <p className="text-sm text-gray-600">AI Health Coach • Demo Mode</p>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Save, Camera, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle } from 'lucide-react';
 import type { UserProfile } from '../../types';
 
 const HEALTH_GOALS = [
@@ -38,21 +37,42 @@ const COMMON_ALLERGIES = [
   'Sesame'
 ];
 
+// Mock profile data for demo
+const mockProfile: UserProfile = {
+  id: 'demo-profile-id',
+  user_id: 'demo-user-id',
+  name: 'Demo User',
+  age: 30,
+  gender: 'other',
+  height: 175,
+  weight: 70,
+  activity_level: 'moderate',
+  health_goals: ['Weight Loss', 'Improved Energy'],
+  dietary_restrictions: ['Vegetarian'],
+  allergies: [],
+  current_habits: 'I try to eat healthy but struggle with consistency.',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
+const mockUser = {
+  email: 'demo@healthcoach.ai'
+};
+
 export const ProfileSettings: React.FC = () => {
-  const { user, profile, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
-    name: profile?.name || '',
-    age: profile?.age?.toString() || '',
-    gender: profile?.gender || 'other',
-    height: profile?.height?.toString() || '',
-    weight: profile?.weight?.toString() || '',
-    activity_level: profile?.activity_level || 'moderate',
-    health_goals: profile?.health_goals || [],
-    dietary_restrictions: profile?.dietary_restrictions || [],
-    allergies: profile?.allergies || [],
-    current_habits: profile?.current_habits || ''
+    name: mockProfile.name,
+    age: mockProfile.age.toString(),
+    gender: mockProfile.gender,
+    height: mockProfile.height.toString(),
+    weight: mockProfile.weight.toString(),
+    activity_level: mockProfile.activity_level,
+    health_goals: mockProfile.health_goals,
+    dietary_restrictions: mockProfile.dietary_restrictions,
+    allergies: mockProfile.allergies,
+    current_habits: mockProfile.current_habits
   });
 
   const handleArrayToggle = (array: string[], value: string, field: 'health_goals' | 'dietary_restrictions' | 'allergies') => {
@@ -69,20 +89,8 @@ export const ProfileSettings: React.FC = () => {
     setSuccess(false);
 
     try {
-      const profileData: Partial<UserProfile> = {
-        name: formData.name,
-        age: parseInt(formData.age) || 0,
-        gender: formData.gender as 'male' | 'female' | 'other',
-        height: parseInt(formData.height) || 0,
-        weight: parseInt(formData.weight) || 0,
-        activity_level: formData.activity_level as UserProfile['activity_level'],
-        health_goals: formData.health_goals,
-        dietary_restrictions: formData.dietary_restrictions,
-        allergies: formData.allergies,
-        current_habits: formData.current_habits
-      };
-
-      await updateProfile(profileData);
+      // Simulate API call for demo
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
@@ -152,7 +160,7 @@ export const ProfileSettings: React.FC = () => {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="email"
-                    value={user?.email || ''}
+                    value={mockUser.email}
                     disabled
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
                   />

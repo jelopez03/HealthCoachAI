@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { AuthForm } from './components/Auth/AuthForm';
-import { ProfileSetup } from './components/Onboarding/ProfileSetup';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ChatInterface } from './components/Chat/ChatInterface';
 import { ProfileSettings } from './components/Settings/ProfileSettings';
@@ -15,54 +12,35 @@ import { SmartGroceryList } from './components/AI/SmartGroceryList';
 import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
 import type { Conversation } from './types';
 
-const AppContent: React.FC = () => {
-  const { user, profile, loading } = useAuth();
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+// Mock user data for public demo
+const mockUser = {
+  id: 'demo-user-id',
+  email: 'demo@healthcoach.ai',
+  created_at: new Date().toISOString(),
+  subscription_status: 'premium' as const
+};
+
+const mockProfile = {
+  id: 'demo-profile-id',
+  user_id: 'demo-user-id',
+  name: 'Demo User',
+  age: 30,
+  gender: 'other' as const,
+  height: 175,
+  weight: 70,
+  activity_level: 'moderate' as const,
+  health_goals: ['Weight Loss', 'Improved Energy'],
+  dietary_restrictions: ['Vegetarian'],
+  allergies: [],
+  current_habits: 'I try to eat healthy but struggle with consistency.',
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
+};
+
+const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list'>('chat');
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
-
-  // TEMPORARY: Skip authentication for development
-  const SKIP_AUTH = true;
-
-  if (loading && !SKIP_AUTH) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sky-500"></div>
-      </div>
-    );
-  }
-
-  if (!user && !SKIP_AUTH) {
-    return (
-      <AuthForm 
-        mode={authMode} 
-        onToggleMode={() => setAuthMode(authMode === 'signin' ? 'signup' : 'signin')} 
-      />
-    );
-  }
-
-  if (!profile && !SKIP_AUTH) {
-    return <ProfileSetup />;
-  }
-
-  // Mock data for development when auth is skipped
-  const mockProfile = SKIP_AUTH ? {
-    id: 'mock-profile-id',
-    user_id: 'mock-user-id',
-    name: 'Demo User',
-    age: 30,
-    gender: 'other' as const,
-    height: 175,
-    weight: 70,
-    activity_level: 'moderate' as const,
-    health_goals: ['Weight Loss', 'Improved Energy'],
-    dietary_restrictions: ['Vegetarian'],
-    allergies: [],
-    current_habits: 'I try to eat healthy but struggle with consistency.',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  } : profile;
 
   const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => {
     setCurrentPage(page);
@@ -105,10 +83,10 @@ const AppContent: React.FC = () => {
                 </svg>
               </div>
               <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                Welcome back, {mockProfile?.name || 'User'}!
+                Welcome to HealthCoach AI!
               </h2>
               <p className="text-gray-600 mb-6">
-                Ready to continue your health journey? Start a new conversation or select an existing one.
+                Ready to start your health journey? Start a new conversation or explore our features.
               </p>
               <div className="space-y-4 text-left max-w-md mx-auto">
                 <div className="bg-sky-50 p-4 rounded-lg">
@@ -120,14 +98,12 @@ const AppContent: React.FC = () => {
                     <li>• Progress tracking and motivation</li>
                   </ul>
                 </div>
-                {SKIP_AUTH && (
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Development Mode:</strong> Authentication is currently bypassed. 
-                      Set SKIP_AUTH to false in App.tsx to re-enable authentication.
-                    </p>
-                  </div>
-                )}
+                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+                  <p className="text-sm text-emerald-800">
+                    <strong>🎯 Demo Mode:</strong> This is a fully functional demo of HealthCoach AI. 
+                    All features are available for testing and exploration.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -136,7 +112,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <>
+    <Router>
       <div className="h-screen flex bg-gray-50">
         <Sidebar
           currentConversation={currentConversation}
@@ -144,6 +120,8 @@ const AppContent: React.FC = () => {
           onNewConversation={() => setCurrentConversation(null)}
           onNavigate={handleNavigate}
           currentPage={currentPage}
+          user={mockUser}
+          profile={mockProfile}
         />
         
         <div className="flex-1 flex flex-col">
@@ -158,18 +136,8 @@ const AppContent: React.FC = () => {
           onUpgrade={handleUpgrade}
         />
       )}
-    </>
-  );
-};
-
-function App() {
-  return (
-    <Router>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
     </Router>
   );
-}
+};
 
 export default App;

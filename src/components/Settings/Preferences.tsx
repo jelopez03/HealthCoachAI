@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Bell, Moon, Globe, Palette, Volume2, Shield, Smartphone, Save, Crown, Lock } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { Settings, Bell, Palette, Volume2, Shield, Smartphone, Save } from 'lucide-react';
 
 interface PreferencesState {
   notifications: {
@@ -34,14 +33,13 @@ interface PreferencesState {
 }
 
 export const Preferences: React.FC = () => {
-  const { user } = useAuth();
   const [preferences, setPreferences] = useState<PreferencesState>({
     notifications: {
       email: true,
       push: true,
       mealReminders: true,
       progressUpdates: true,
-      weeklyReports: false
+      weeklyReports: true
     },
     appearance: {
       theme: 'light',
@@ -67,8 +65,6 @@ export const Preferences: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-
-  const isPremiumUser = user?.subscription_status === 'premium';
 
   const handleSave = async () => {
     setLoading(true);
@@ -112,41 +108,18 @@ export const Preferences: React.FC = () => {
     description?: string;
     checked: boolean;
     onChange: (checked: boolean) => void;
-    premium?: boolean;
-  }> = ({ label, description, checked, onChange, premium = false }) => (
+  }> = ({ label, description, checked, onChange }) => (
     <div className="flex items-center justify-between py-3">
       <div className="flex-1">
-        <div className="flex items-center space-x-2">
-          <p className="font-medium text-gray-800">{label}</p>
-          {premium && !isPremiumUser && (
-            <div className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
-              <Crown className="w-3 h-3" />
-              <span>Premium</span>
-            </div>
-          )}
-        </div>
+        <p className="font-medium text-gray-800">{label}</p>
         {description && <p className="text-sm text-gray-600">{description}</p>}
       </div>
       <button
-        onClick={() => {
-          if (premium && !isPremiumUser) {
-            // Show premium upgrade modal or message
-            return;
-          }
-          onChange(!checked);
-        }}
-        disabled={premium && !isPremiumUser}
+        onClick={() => onChange(!checked)}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          premium && !isPremiumUser
-            ? 'bg-gray-300 cursor-not-allowed'
-            : checked 
-            ? 'bg-sky-500' 
-            : 'bg-gray-300'
+          checked ? 'bg-sky-500' : 'bg-gray-300'
         }`}
       >
-        {premium && !isPremiumUser && (
-          <Lock className="absolute inset-0 w-4 h-4 text-gray-500 m-auto" />
-        )}
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
             checked ? 'translate-x-6' : 'translate-x-1'
@@ -161,28 +134,13 @@ export const Preferences: React.FC = () => {
     value: string;
     options: { value: string; label: string }[];
     onChange: (value: string) => void;
-    premium?: boolean;
-  }> = ({ label, value, options, onChange, premium = false }) => (
+  }> = ({ label, value, options, onChange }) => (
     <div className="py-3">
-      <div className="flex items-center space-x-2 mb-2">
-        <label className="block font-medium text-gray-800">{label}</label>
-        {premium && !isPremiumUser && (
-          <div className="flex items-center space-x-1 bg-purple-100 text-purple-700 px-2 py-1 rounded-full text-xs">
-            <Crown className="w-3 h-3" />
-            <span>Premium</span>
-          </div>
-        )}
-      </div>
+      <label className="block font-medium text-gray-800 mb-2">{label}</label>
       <select
         value={value}
-        onChange={(e) => {
-          if (premium && !isPremiumUser) return;
-          onChange(e.target.value);
-        }}
-        disabled={premium && !isPremiumUser}
-        className={`w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
-          premium && !isPremiumUser ? 'bg-gray-100 cursor-not-allowed' : ''
-        }`}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
       >
         {options.map(option => (
           <option key={option.value} value={option.value}>
@@ -283,7 +241,6 @@ export const Preferences: React.FC = () => {
               description="Detailed weekly health and nutrition reports"
               checked={preferences.notifications.weeklyReports}
               onChange={(checked) => updatePreference('notifications', 'weeklyReports', checked)}
-              premium={true}
             />
           </div>
         </PreferenceSection>
@@ -311,7 +268,6 @@ export const Preferences: React.FC = () => {
                 { value: 'orange', label: 'Sunset Orange' }
               ]}
               onChange={(value) => updatePreference('appearance', 'colorScheme', value)}
-              premium={true}
             />
             <Select
               label="Font Size"
@@ -348,7 +304,6 @@ export const Preferences: React.FC = () => {
                 { value: 'direct', label: 'Direct & Goal-Focused' }
               ]}
               onChange={(value) => updatePreference('coaching', 'coachingStyle', value)}
-              premium={true}
             />
             <Select
               label="Language"
@@ -378,7 +333,6 @@ export const Preferences: React.FC = () => {
               description="Enable AI voice responses and guidance"
               checked={preferences.audio.voiceGuidance}
               onChange={(checked) => updatePreference('audio', 'voiceGuidance', checked)}
-              premium={true}
             />
             <Slider
               label="Volume"
@@ -414,26 +368,6 @@ export const Preferences: React.FC = () => {
           </div>
         </PreferenceSection>
       </div>
-
-      {/* Premium Features Notice */}
-      {!isPremiumUser && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-6"
-        >
-          <div className="flex items-center space-x-3 mb-4">
-            <Crown className="w-6 h-6 text-purple-600" />
-            <h3 className="text-lg font-semibold text-purple-800">Unlock Premium Features</h3>
-          </div>
-          <p className="text-purple-700 mb-4">
-            Get access to advanced customization options, weekly reports, voice guidance, and more with Premium.
-          </p>
-          <button className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all">
-            Upgrade to Premium
-          </button>
-        </motion.div>
-      )}
 
       {/* Save Button */}
       <div className="flex justify-end mt-8">
