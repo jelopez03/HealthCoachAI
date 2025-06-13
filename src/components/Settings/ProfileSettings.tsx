@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X, CheckCircle, AlertCircle, Sparkles } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import type { UserProfile } from '../../types';
 
@@ -55,6 +55,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
   const [emailError, setEmailError] = useState('');
   const [heightError, setHeightError] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -70,6 +71,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     allergies: [] as string[],
     current_habits: ''
   });
+
+  // Check for success message from URL params or localStorage
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const successParam = urlParams.get('success');
+    const savedSuccess = localStorage.getItem('profile-update-success');
+    
+    if (successParam === 'true' || savedSuccess === 'true') {
+      setShowSuccessMessage(true);
+      localStorage.removeItem('profile-update-success');
+      
+      // Clear URL params
+      if (successParam) {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => setShowSuccessMessage(false), 5000);
+    }
+  }, []);
 
   // Load existing profile data when component mounts
   useEffect(() => {
@@ -288,6 +310,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       localStorage.setItem('healthcoach-profile', JSON.stringify(fullProfileData));
       
       setSuccess(true);
+      setShowSuccessMessage(true);
+      
+      // Store success state for page refresh
+      localStorage.setItem('profile-update-success', 'true');
       
       // Check if profile is complete and call appropriate callback
       if (isProfileComplete()) {
@@ -300,7 +326,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         onProfileUpdate(fullProfileData);
       }
       
-      setTimeout(() => setSuccess(false), 5000);
+      setTimeout(() => {
+        setSuccess(false);
+        setShowSuccessMessage(false);
+      }, 5000);
     } catch (error) {
       console.error('Error updating profile:', error);
       setError(`Failed to save profile: ${error.message || 'Unknown error'}`);
@@ -311,20 +340,56 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {/* Success Message Banner */}
+      <AnimatePresence>
+        {showSuccessMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.95 }}
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white p-4 rounded-xl shadow-2xl border border-emerald-400">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">Profile Updated Successfully!</p>
+                  <p className="text-emerald-100 text-sm">Your health journey is now personalized</p>
+                </div>
+                <button
+                  onClick={() => setShowSuccessMessage(false)}
+                  className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center hover:bg-opacity-30 transition-all"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl shadow-xl overflow-hidden"
+        className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100"
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-sky-500 to-emerald-500 px-8 py-6">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-br from-sky-500 via-blue-500 to-emerald-500 px-8 py-8 relative overflow-hidden">
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-white rounded-full -translate-x-16 -translate-y-16"></div>
+            <div className="absolute bottom-0 right-0 w-24 h-24 bg-white rounded-full translate-x-12 translate-y-12"></div>
+          </div>
+          
+          <div className="relative flex items-center space-x-4">
+            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
               <User className="w-8 h-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Profile Settings</h1>
-              <p className="text-sky-100">
+              <h1 className="text-3xl font-bold text-white mb-1">Profile Settings</h1>
+              <p className="text-sky-100 text-lg">
                 {existingProfile ? 'Update your personal information and preferences' : 'Complete your profile to get started'}
               </p>
             </div>
@@ -335,37 +400,42 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         <div className="p-6 space-y-4">
           {/* Profile Completion Notice */}
           {!isProfileComplete() && (
-            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 p-4 rounded-lg"
+            >
               <div className="flex items-center">
-                <AlertTriangle className="w-5 h-5 text-amber-400 mr-2" />
-                <p className="text-amber-700 font-medium">
-                  Please complete all required fields to get personalized recommendations.
-                </p>
+                <AlertTriangle className="w-5 h-5 text-amber-500 mr-3" />
+                <div>
+                  <p className="text-amber-800 font-semibold">Complete Your Profile</p>
+                  <p className="text-amber-700 text-sm">Fill in all required fields to unlock personalized recommendations</p>
+                </div>
               </div>
-            </div>
+            </motion.div>
           )}
 
           {/* Success Message */}
           {success && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gradient-to-r from-emerald-50 to-teal-50 border-l-4 border-emerald-400 p-4 rounded-lg"
             >
               <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+                <CheckCircle className="w-5 h-5 text-emerald-500 mr-3" />
                 <div>
-                  <p className="text-green-700 font-medium">
+                  <p className="text-emerald-800 font-semibold">
                     Profile saved successfully! 
                     {isProfileComplete() && ' Your profile is now complete.'}
                   </p>
                   {isSupabaseConfigured() && (
-                    <p className="text-green-600 text-sm mt-1">
+                    <p className="text-emerald-700 text-sm mt-1">
                       ✓ Saved to database and local storage
                     </p>
                   )}
                   {!isSupabaseConfigured() && (
-                    <p className="text-green-600 text-sm mt-1">
+                    <p className="text-emerald-700 text-sm mt-1">
                       ✓ Saved to local storage (database not configured)
                     </p>
                   )}
@@ -377,31 +447,31 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           {/* Error Message */}
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-4 rounded-lg"
             >
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+                <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
                 <div>
-                  <p className="text-red-700 font-medium">Error saving profile</p>
-                  <p className="text-red-600 text-sm mt-1">{error}</p>
+                  <p className="text-red-800 font-semibold">Error saving profile</p>
+                  <p className="text-red-700 text-sm mt-1">{error}</p>
                 </div>
               </div>
             </motion.div>
           )}
 
           {/* Database Status */}
-          <div className={`p-4 rounded-lg border ${
+          <div className={`p-4 rounded-lg border-l-4 ${
             isSupabaseConfigured()
-              ? 'bg-blue-50 border-blue-200' 
-              : 'bg-gray-50 border-gray-200'
+              ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-400' 
+              : 'bg-gradient-to-r from-gray-50 to-slate-50 border-gray-400'
           }`}>
             <div className="flex items-center">
               <div className={`w-3 h-3 rounded-full mr-3 ${
                 isSupabaseConfigured() ? 'bg-green-500' : 'bg-gray-400'
               }`}></div>
-              <p className={`text-sm font-medium ${
+              <p className={`font-semibold ${
                 isSupabaseConfigured() ? 'text-blue-800' : 'text-gray-700'
               }`}>
                 Database: {
@@ -414,31 +484,35 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-8 space-y-8">
+        <form onSubmit={handleSubmit} className="p-8 space-y-10">
           {/* Basic Information */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-              <User className="w-5 h-5 mr-2 text-sky-500" />
-              Basic Information
-            </h2>
+            <div className="flex items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Basic Information</h2>
+              </div>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                   placeholder="Enter your full name"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -451,8 +525,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       if (emailError) validateEmail(e.target.value);
                     }}
                     onBlur={(e) => validateEmail(e.target.value)}
-                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
-                      emailError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    className={`w-full pl-10 pr-10 py-3 border-2 rounded-xl focus:ring-2 focus:ring-sky-500 transition-all ${
+                      emailError ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-sky-500'
                     }`}
                     placeholder="Enter your email address"
                     required
@@ -464,12 +538,12 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   ) : null}
                 </div>
                 {emailError && (
-                  <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                  <p className="text-red-500 text-sm mt-2 font-medium">{emailError}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Age <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -478,7 +552,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     type="number"
                     value={formData.age}
                     onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                     placeholder="Age"
                     min="13"
                     max="120"
@@ -488,11 +562,11 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Gender</label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                 >
                   <option value="male">Male</option>
                   <option value="female">Female</option>
@@ -501,7 +575,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Height <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-3">
@@ -515,8 +589,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                         if (heightError) validateHeight();
                       }}
                       onBlur={validateHeight}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
-                        heightError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-sky-500 transition-all ${
+                        heightError ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-sky-500'
                       }`}
                       placeholder="5"
                       min="3"
@@ -524,7 +598,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       required
                     />
                   </div>
-                  <span className="text-gray-600 font-medium">feet</span>
+                  <span className="text-gray-600 font-semibold">feet</span>
                   <div className="relative flex-1">
                     <input
                       type="number"
@@ -534,8 +608,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                         if (heightError) validateHeight();
                       }}
                       onBlur={validateHeight}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
-                        heightError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      className={`w-full px-4 py-3 border-2 rounded-xl focus:ring-2 focus:ring-sky-500 transition-all ${
+                        heightError ? 'border-red-300 bg-red-50 focus:border-red-500' : 'border-gray-200 focus:border-sky-500'
                       }`}
                       placeholder="8"
                       min="0"
@@ -543,18 +617,18 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       required
                     />
                   </div>
-                  <span className="text-gray-600 font-medium">inches</span>
+                  <span className="text-gray-600 font-semibold">inches</span>
                 </div>
                 {heightError && (
-                  <p className="text-red-500 text-sm mt-1">{heightError}</p>
+                  <p className="text-red-500 text-sm mt-2 font-medium">{heightError}</p>
                 )}
-                <p className="text-gray-500 text-xs mt-1">
+                <p className="text-gray-500 text-xs mt-2">
                   Example: 5 feet 8 inches (5' 8")
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
                   Weight (lbs) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -563,7 +637,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     type="number"
                     value={formData.weight}
                     onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                     placeholder="154"
                     min="50"
                     max="500"
@@ -574,30 +648,41 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
           </div>
 
-          {/* Section Divider */}
-          <hr className="border-t-2 border-gray-100 my-8" />
+          {/* Enhanced Section Divider */}
+          <div className="relative">
+            <hr className="border-t-4 border-gradient-to-r from-sky-200 via-blue-200 to-emerald-200 my-8" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white px-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-sky-500 to-emerald-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
 
           {/* Activity Level */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-              <Activity className="w-5 h-5 mr-2 text-sky-500" />
-              Activity Level
-            </h2>
+            <div className="flex items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Activity Level</h2>
+              </div>
+            </div>
             
             <div className="space-y-3">
               {[
-                { value: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise' },
-                { value: 'light', label: 'Light', desc: 'Exercise 1-3 times per week' },
-                { value: 'moderate', label: 'Moderate', desc: 'Exercise 4-5 times per week' },
-                { value: 'active', label: 'Active', desc: 'Daily exercise or intense exercise 3-4 times per week' },
-                { value: 'very_active', label: 'Very Active', desc: 'Intense exercise 6-7 times per week' }
+                { value: 'sedentary', label: 'Sedentary', desc: 'Little or no exercise', color: 'from-gray-500 to-gray-600' },
+                { value: 'light', label: 'Light', desc: 'Exercise 1-3 times per week', color: 'from-blue-500 to-blue-600' },
+                { value: 'moderate', label: 'Moderate', desc: 'Exercise 4-5 times per week', color: 'from-green-500 to-green-600' },
+                { value: 'active', label: 'Active', desc: 'Daily exercise or intense exercise 3-4 times per week', color: 'from-orange-500 to-orange-600' },
+                { value: 'very_active', label: 'Very Active', desc: 'Intense exercise 6-7 times per week', color: 'from-red-500 to-red-600' }
               ].map((option) => (
                 <label
                   key={option.value}
-                  className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  className={`block p-5 border-2 rounded-xl cursor-pointer transition-all transform hover:scale-[1.02] ${
                     formData.activity_level === option.value
-                      ? 'border-sky-500 bg-sky-50'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-sky-500 bg-gradient-to-r from-sky-50 to-blue-50 shadow-lg'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
                   <input
@@ -608,93 +693,121 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                     onChange={(e) => setFormData(prev => ({ ...prev, activity_level: e.target.value }))}
                     className="sr-only"
                   />
-                  <div className="font-medium text-gray-800">{option.label}</div>
-                  <div className="text-sm text-gray-600">{option.desc}</div>
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-4 h-4 rounded-full bg-gradient-to-r ${option.color}`}></div>
+                    <div>
+                      <div className="font-bold text-gray-800 text-lg">{option.label}</div>
+                      <div className="text-gray-600">{option.desc}</div>
+                    </div>
+                  </div>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Section Divider */}
-          <hr className="border-t-2 border-gray-100 my-8" />
+          {/* Enhanced Section Divider */}
+          <div className="relative">
+            <hr className="border-t-4 border-gradient-to-r from-emerald-200 via-teal-200 to-cyan-200 my-8" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white px-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
 
           {/* Health Goals */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-              <Target className="w-5 h-5 mr-2 text-sky-500" />
-              Health Goals <span className="text-red-500 text-sm">*</span>
-            </h2>
+            <div className="flex items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Health Goals</h2>
+                <span className="text-red-500 text-lg font-bold">*</span>
+              </div>
+            </div>
             
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {HEALTH_GOALS.map((goal) => (
                 <button
                   key={goal}
                   type="button"
                   onClick={() => handleArrayToggle(formData.health_goals, goal, 'health_goals')}
-                  className={`p-3 text-left border-2 rounded-lg transition-all ${
+                  className={`p-4 text-left border-2 rounded-xl transition-all transform hover:scale-105 ${
                     formData.health_goals.includes(goal)
-                      ? 'border-emerald-500 bg-emerald-50 text-emerald-700'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 shadow-lg'
+                      : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
-                  {goal}
+                  <div className="font-semibold">{goal}</div>
                 </button>
               ))}
             </div>
             {formData.health_goals.length === 0 && (
-              <p className="text-sm text-red-500 mt-2">Please select at least one health goal.</p>
+              <p className="text-red-500 font-medium mt-3">Please select at least one health goal.</p>
             )}
           </div>
 
-          {/* Section Divider */}
-          <hr className="border-t-2 border-gray-100 my-8" />
+          {/* Enhanced Section Divider */}
+          <div className="relative">
+            <hr className="border-t-4 border-gradient-to-r from-orange-200 via-amber-200 to-yellow-200 my-8" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white px-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-orange-500 to-amber-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
 
           {/* Dietary Preferences */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
-              <Utensils className="w-5 h-5 mr-2 text-sky-500" />
-              Dietary Preferences
-            </h2>
+            <div className="flex items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
+                  <Utensils className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Dietary Preferences</h2>
+              </div>
+            </div>
             
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div>
-                <h3 className="font-medium text-gray-800 mb-3">Dietary Restrictions</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <h3 className="font-bold text-gray-800 mb-4 text-lg">Dietary Restrictions</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {DIETARY_RESTRICTIONS.map((restriction) => (
                     <button
                       key={restriction}
                       type="button"
                       onClick={() => handleArrayToggle(formData.dietary_restrictions, restriction, 'dietary_restrictions')}
-                      className={`p-3 text-left border-2 rounded-lg transition-all ${
+                      className={`p-4 text-left border-2 rounded-xl transition-all transform hover:scale-105 ${
                         formData.dietary_restrictions.includes(restriction)
-                          ? 'border-orange-500 bg-orange-50 text-orange-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-orange-500 bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 shadow-lg'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                     >
-                      {restriction}
+                      <div className="font-semibold">{restriction}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="font-medium text-gray-800 mb-3 flex items-center">
+                <h3 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
                   <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
                   Allergies
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {COMMON_ALLERGIES.map((allergy) => (
                     <button
                       key={allergy}
                       type="button"
                       onClick={() => handleArrayToggle(formData.allergies, allergy, 'allergies')}
-                      className={`p-3 text-left border-2 rounded-lg transition-all ${
+                      className={`p-4 text-left border-2 rounded-xl transition-all transform hover:scale-105 ${
                         formData.allergies.includes(allergy)
-                          ? 'border-red-500 bg-red-50 text-red-700'
-                          : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-red-500 bg-gradient-to-r from-red-50 to-pink-50 text-red-700 shadow-lg'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                     >
-                      {allergy}
+                      <div className="font-semibold">{allergy}</div>
                     </button>
                   ))}
                 </div>
@@ -702,42 +815,56 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             </div>
           </div>
 
-          {/* Section Divider */}
-          <hr className="border-t-2 border-gray-100 my-8" />
+          {/* Enhanced Section Divider */}
+          <div className="relative">
+            <hr className="border-t-4 border-gradient-to-r from-indigo-200 via-purple-200 to-pink-200 my-8" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white px-4">
+                <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"></div>
+              </div>
+            </div>
+          </div>
 
           {/* Current Habits */}
           <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">Current Habits & Notes</h2>
+            <div className="flex items-center mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
+                  <Target className="w-5 h-5 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Current Habits & Notes</h2>
+              </div>
+            </div>
             <textarea
               value={formData.current_habits}
               onChange={(e) => setFormData(prev => ({ ...prev, current_habits: e.target.value }))}
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
+              rows={5}
+              className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
               placeholder="Tell us about your current eating habits, challenges, lifestyle, or anything else you'd like your AI coach to know..."
             />
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end pt-6 border-t border-gray-200">
+          {/* Enhanced Save Button */}
+          <div className="flex justify-end pt-8 border-t-4 border-gradient-to-r from-sky-200 to-emerald-200">
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading || !!emailError || !!heightError}
-              className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all disabled:opacity-50 ${
+              className={`flex items-center px-10 py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 shadow-lg ${
                 isProfileComplete()
-                  ? 'bg-gradient-to-r from-sky-500 to-emerald-500 text-white hover:from-sky-600 hover:to-emerald-600'
-                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'
+                  ? 'bg-gradient-to-r from-sky-500 to-emerald-500 text-white hover:from-sky-600 hover:to-emerald-600 hover:shadow-xl'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:shadow-xl'
               }`}
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-3"></div>
                   Saving...
                 </>
               ) : (
                 <>
-                  <Save className="w-5 h-5 mr-2" />
+                  <Save className="w-6 h-6 mr-3" />
                   {isProfileComplete() ? 'Save Changes' : 'Complete Profile'}
                 </>
               )}
