@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X } from 'lucide-react';
+import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 import type { UserProfile } from '../../types';
 
 const HEALTH_GOALS = [
@@ -50,6 +51,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [heightError, setHeightError] = useState('');
   const [initialLoad, setInitialLoad] = useState(true);
@@ -96,6 +98,46 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       setInitialLoad(false);
     }
   }, [existingProfile, initialLoad]);
+
+  // Load existing profile from database on component mount
+  useEffect(() => {
+    const loadExistingProfile = async () => {
+      if (!isSupabaseConfigured()) return;
+      
+      try {
+        // Try to find existing profile by email
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('email', 'user@healthcoach.ai')
+          .single();
+
+        if (data && !error) {
+          setFormData({
+            name: data.name || '',
+            email: data.email || 'user@healthcoach.ai',
+            age: data.age ? data.age.toString() : '',
+            gender: data.gender || 'other',
+            height_feet: data.height_feet ? data.height_feet.toString() : '',
+            height_inches: data.height_inches ? data.height_inches.toString() : '',
+            weight: data.weight ? data.weight.toString() : '',
+            activity_level: data.activity_level || 'moderate',
+            health_goals: data.health_goals || [],
+            dietary_restrictions: data.dietary_restrictions || [],
+            allergies: data.allergies || [],
+            current_habits: data.current_habits || ''
+          });
+        }
+      } catch (err) {
+        console.log('No existing profile found, starting fresh');
+      }
+    };
+
+    if (initialLoad && !existingProfile) {
+      loadExistingProfile();
+      setInitialLoad(false);
+    }
+  }, [initialLoad, existingProfile]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -161,6 +203,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
+    setError('');
 
     // Validate email and height
     const isEmailValid = validateEmail(formData.email);
@@ -172,15 +215,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     }
 
     try {
-      // Simulate saving delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       // Create profile object
-      const profileData: UserProfile = {
-        id: existingProfile?.id || 'profile-' + Date.now(),
-        user_id: 'open-access-user',
-        name: formData.name.trim(),
+      const profileData = {
         email: formData.email.trim().toLowerCase(),
+        name: formData.name.trim(),
         age: parseInt(formData.age) || 0,
         gender: formData.gender as 'male' | 'female' | 'other',
         height_feet: parseInt(formData.height_feet) || 0,
@@ -193,27 +231,83 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
         dietary_restrictions: formData.dietary_restrictions,
         allergies: formData.allergies,
         current_habits: formData.current_habits.trim(),
-        created_at: existingProfile?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
+
+      if (isSupabaseConfigured()) {
+        // Try to save to database
+        try {
+          // First, try to find existing profile by email
+          const { data: existingData, error: findError } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('email', profileData.email)
+            .single();
+
+          let result;
+          if (existingData && !findError) {
+            // Update existing profile
+            result = await supabase
+              .from('user_profiles')
+              .update(profileData)
+              .eq('email', profileData.email)
+              .select()
+              .single();
+          } else {
+            // Insert new profile
+            result = await supabase
+              .from('user_profiles')
+              .insert({
+                ...profileData,
+                user_id: 'open-access-user', // Use a consistent user ID for open access
+                subscription_status: 'premium', // Give premium access for testing
+                interviews_remaining: 999,
+                created_at: new Date().toISOString()
+              })
+              .select()
+              .single();
+          }
+
+          if (result.error) {
+            throw result.error;
+          }
+
+          console.log('Profile saved to database:', result.data);
+        } catch (dbError) {
+          console.error('Database error:', dbError);
+          setError(`Database error: ${dbError.message || 'Failed to save profile'}`);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Also save to localStorage as backup
+      const fullProfileData: UserProfile = {
+        id: existingProfile?.id || 'profile-' + Date.now(),
+        user_id: 'open-access-user',
+        ...profileData,
+        created_at: existingProfile?.created_at || new Date().toISOString()
+      };
+
+      localStorage.setItem('healthcoach-profile', JSON.stringify(fullProfileData));
       
       setSuccess(true);
       
       // Check if profile is complete and call appropriate callback
       if (isProfileComplete()) {
         if (onProfileComplete) {
-          onProfileComplete(profileData);
+          onProfileComplete(fullProfileData);
         }
       }
       
       if (onProfileUpdate) {
-        onProfileUpdate(profileData);
+        onProfileUpdate(fullProfileData);
       }
       
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => setSuccess(false), 5000);
     } catch (error) {
       console.error('Error updating profile:', error);
-      setEmailError('Failed to save profile. Please try again.');
+      setError(`Failed to save profile: ${error.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -241,33 +335,84 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           </div>
         </div>
 
-        {/* Profile Completion Notice */}
-        {!isProfileComplete() && (
-          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 m-6 rounded-lg">
+        {/* Status Messages */}
+        <div className="p-6 space-y-4">
+          {/* Profile Completion Notice */}
+          {!isProfileComplete() && (
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="w-5 h-5 text-amber-400 mr-2" />
+                <p className="text-amber-700 font-medium">
+                  Please complete all required fields to get personalized recommendations.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border-l-4 border-green-400 p-4 rounded-lg"
+            >
+              <div className="flex items-center">
+                <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
+                <div>
+                  <p className="text-green-700 font-medium">
+                    Profile saved successfully! 
+                    {isProfileComplete() && ' Your profile is now complete.'}
+                  </p>
+                  {isSupabaseConfigured() && (
+                    <p className="text-green-600 text-sm mt-1">
+                      ✓ Saved to database and local storage
+                    </p>
+                  )}
+                  {!isSupabaseConfigured() && (
+                    <p className="text-green-600 text-sm mt-1">
+                      ✓ Saved to local storage (database not configured)
+                    </p>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border-l-4 border-red-400 p-4 rounded-lg"
+            >
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+                <div>
+                  <p className="text-red-700 font-medium">Error saving profile</p>
+                  <p className="text-red-600 text-sm mt-1">{error}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Database Status */}
+          <div className={`p-4 rounded-lg border ${
+            isSupabaseConfigured() 
+              ? 'bg-blue-50 border-blue-200' 
+              : 'bg-gray-50 border-gray-200'
+          }`}>
             <div className="flex items-center">
-              <AlertTriangle className="w-5 h-5 text-amber-400 mr-2" />
-              <p className="text-amber-700 font-medium">
-                Please complete all required fields to get personalized recommendations.
+              <div className={`w-3 h-3 rounded-full mr-3 ${
+                isSupabaseConfigured() ? 'bg-green-500' : 'bg-gray-400'
+              }`}></div>
+              <p className={`text-sm font-medium ${
+                isSupabaseConfigured() ? 'text-blue-800' : 'text-gray-700'
+              }`}>
+                Database: {isSupabaseConfigured() ? 'Connected' : 'Not configured (using local storage)'}
               </p>
             </div>
           </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-green-50 border-l-4 border-green-400 p-4 m-6 rounded-lg"
-          >
-            <div className="flex items-center">
-              <Save className="w-5 h-5 text-green-400 mr-2" />
-              <p className="text-green-700 font-medium">
-                Profile updated successfully! {isProfileComplete() && 'Your profile is now complete.'}
-              </p>
-            </div>
-          </motion.div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">
           {/* Basic Information */}
