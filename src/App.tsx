@@ -21,13 +21,51 @@ const mockUser: User = {
   subscription_status: 'premium' // Give premium access for testing
 };
 
+// Helper function to generate valid UUIDs for mock data
+const generateMockUUID = () => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c == 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list'>('profile'); // Start with profile
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+
+  // Mock conversations for demo
+  const mockConversations: Conversation[] = [
+    {
+      id: generateMockUUID(),
+      user_id: mockUser.id,
+      title: 'Meal Planning for Weight Loss',
+      message_count: 8,
+      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      updated_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
+    },
+    {
+      id: generateMockUUID(),
+      user_id: mockUser.id,
+      title: 'Vegetarian Protein Sources',
+      message_count: 5,
+      created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
+      updated_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
+    },
+    {
+      id: generateMockUUID(),
+      user_id: mockUser.id,
+      title: 'Quick Healthy Breakfast Ideas',
+      message_count: 12,
+      created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
+      updated_at: new Date(Date.now() - 10800000).toISOString() // 3 hours ago
+    }
+  ];
 
   // Load profile from localStorage on mount
   useEffect(() => {
@@ -57,6 +95,9 @@ const App: React.FC = () => {
         console.error('Error parsing saved profile:', error);
       }
     }
+
+    // Load mock conversations
+    setConversations(mockConversations);
   }, []);
 
   // Check if this is the user's first visit
@@ -71,9 +112,6 @@ const App: React.FC = () => {
 
   const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => {
     setCurrentPage(page);
-    if (page !== 'chat') {
-      setCurrentConversation(null);
-    }
     
     // Close walkthrough when navigating
     if (showWalkthrough) {
@@ -109,6 +147,27 @@ const App: React.FC = () => {
     localStorage.setItem('healthcoach-profile', JSON.stringify(updatedProfile));
   };
 
+  const handleNewConversation = () => {
+    const newConversation: Conversation = {
+      id: generateMockUUID(),
+      user_id: mockUser.id,
+      title: 'New Conversation',
+      message_count: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    setConversations(prev => [newConversation, ...prev]);
+    setCurrentConversation(newConversation);
+    setCurrentPage('chat');
+  };
+
+  const handleDeleteConversation = (conversationId: string) => {
+    setConversations(prev => prev.filter(conv => conv.id !== conversationId));
+    if (currentConversation?.id === conversationId) {
+      setCurrentConversation(null);
+    }
+  };
+
   const renderMainContent = () => {
     switch (currentPage) {
       case 'profile':
@@ -133,63 +192,15 @@ const App: React.FC = () => {
         return <SmartGroceryList />;
       case 'chat':
       default:
-        return currentConversation ? (
-          <ChatInterface conversation={currentConversation} />
-        ) : (
-          <div className="flex-1 flex items-center justify-center bg-white">
-            <div className="text-center">
-              <div className="w-24 h-24 bg-gradient-to-r from-sky-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
-                Welcome to HealthCoach AI!
-              </h2>
-              <p className="text-gray-600 mb-6">
-                Ready to start your health journey? Start a new conversation or explore our features.
-              </p>
-              <div className="space-y-4 text-left max-w-md mx-auto">
-                <div className="bg-sky-50 p-4 rounded-lg">
-                  <h3 className="font-medium text-sky-800 mb-2">💬 Ask me anything about:</h3>
-                  <ul className="text-sm text-sky-700 space-y-1">
-                    <li>• Personalized meal planning</li>
-                    <li>• Nutritional advice and tips</li>
-                    <li>• Healthy recipe suggestions</li>
-                    <li>• Progress tracking and motivation</li>
-                  </ul>
-                </div>
-                <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-                  <p className="text-sm text-emerald-800">
-                    <strong>🎯 Open Access:</strong> This is a fully functional demo of HealthCoach AI. 
-                    All features are available for testing and exploration.
-                  </p>
-                </div>
-                {!profileCompleted && (
-                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                    <p className="text-sm text-amber-800">
-                      <strong>⚠️ Complete Your Profile:</strong> For the best experience, please{' '}
-                      <button 
-                        onClick={() => handleNavigate('profile')}
-                        className="underline font-medium hover:text-amber-900"
-                      >
-                        complete your profile
-                      </button>{' '}
-                      first to get personalized recommendations.
-                    </p>
-                  </div>
-                )}
-                <div className="text-center">
-                  <button
-                    onClick={() => setShowWalkthrough(true)}
-                    className="text-sky-600 hover:text-sky-700 text-sm font-medium underline"
-                  >
-                    Take the guided tour
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+        return (
+          <ChatInterface 
+            conversation={currentConversation}
+            conversations={conversations}
+            onConversationSelect={setCurrentConversation}
+            onNewConversation={handleNewConversation}
+            onDeleteConversation={handleDeleteConversation}
+            userProfile={profile}
+          />
         );
     }
   };
@@ -198,9 +209,6 @@ const App: React.FC = () => {
     <Router>
       <div className="h-screen flex bg-gray-50">
         <Sidebar
-          currentConversation={currentConversation}
-          onConversationSelect={setCurrentConversation}
-          onNewConversation={() => setCurrentConversation(null)}
           onNavigate={handleNavigate}
           currentPage={currentPage}
           user={mockUser}

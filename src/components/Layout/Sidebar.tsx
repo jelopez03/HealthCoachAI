@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle } from 'lucide-react';
+import { Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle } from 'lucide-react';
 import { PremiumUpgrade } from '../Premium/PremiumUpgrade';
-import type { Conversation, User as UserType, UserProfile } from '../../types';
+import type { User as UserType, UserProfile } from '../../types';
 
 interface SidebarProps {
-  currentConversation: Conversation | null;
-  onConversationSelect: (conversation: Conversation) => void;
-  onNewConversation: () => void;
   onNavigate?: (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => void;
   currentPage?: string;
   user: UserType;
@@ -15,76 +12,14 @@ interface SidebarProps {
   profileCompleted?: boolean;
 }
 
-// Helper function to generate valid UUIDs for mock data
-const generateMockUUID = () => {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
-};
-
 export const Sidebar: React.FC<SidebarProps> = ({ 
-  currentConversation, 
-  onConversationSelect, 
-  onNewConversation,
   onNavigate,
   currentPage = 'chat',
   user,
   profile,
   profileCompleted = false
 }) => {
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
-
-  // Mock conversations for demo
-  const mockConversations: Conversation[] = [
-    {
-      id: generateMockUUID(),
-      user_id: user.id,
-      title: 'Meal Planning for Weight Loss',
-      message_count: 8,
-      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-      updated_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
-    },
-    {
-      id: generateMockUUID(),
-      user_id: user.id,
-      title: 'Vegetarian Protein Sources',
-      message_count: 5,
-      created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-      updated_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
-    },
-    {
-      id: generateMockUUID(),
-      user_id: user.id,
-      title: 'Quick Healthy Breakfast Ideas',
-      message_count: 12,
-      created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-      updated_at: new Date(Date.now() - 10800000).toISOString() // 3 hours ago
-    }
-  ];
-
-  useEffect(() => {
-    // Load mock conversations
-    setConversations(mockConversations);
-  }, [user.id]);
-
-  const handleNewConversation = async () => {
-    // Create mock new conversation
-    const newMockConversation: Conversation = {
-      id: generateMockUUID(),
-      user_id: user.id,
-      title: 'New Conversation',
-      message_count: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    setConversations(prev => [newMockConversation, ...prev]);
-    onNewConversation();
-    onConversationSelect(newMockConversation);
-  };
 
   const handleUpgrade = (planId: string) => {
     console.log(`User upgraded to ${planId} plan`);
@@ -92,14 +27,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navigationItems = [
-    { id: 'chat', label: 'Conversations', icon: MessageSquare, isPremium: false },
+    { id: 'chat', label: 'AI Chat', icon: Heart, isPremium: false },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
     { id: 'exercise', label: 'Exercise & Habits', icon: Activity, isPremium: false },
     { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera, isPremium: true },
     { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart, isPremium: true },
     { id: 'reports', label: 'Weekly Reports', icon: TrendingUp, isPremium: true },
-    { id: 'profile', label: 'Profile Settings', icon: User, isPremium: false },
-    { id: 'preferences', label: 'Preferences', icon: Settings, isPremium: false }
+    { id: 'profile', label: 'Profile Settings', icon: User, isPremium: false }
   ];
 
   return (
@@ -178,146 +112,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </button>
             ))}
           </div>
-
-          {/* New Conversation Button - Only show on chat page */}
-          {currentPage === 'chat' && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleNewConversation}
-              className="w-full flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-sky-500 to-emerald-500 text-white rounded-lg hover:from-sky-600 hover:to-emerald-600 transition-all"
-            >
-              <Plus className="w-5 h-5" />
-              <span>New Conversation</span>
-            </motion.button>
-          )}
         </div>
 
-        {/* Conversations List - Only show on chat page */}
-        {currentPage === 'chat' && (
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="space-y-2">
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-500"></div>
-                </div>
-              ) : conversations.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No conversations yet</p>
-                  <p className="text-sm">Start a new chat to begin!</p>
-                </div>
-              ) : (
-                <AnimatePresence>
-                  {conversations.map((conversation) => (
-                    <motion.button
-                      key={conversation.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      onClick={() => onConversationSelect(conversation)}
-                      className={`w-full text-left p-3 rounded-lg transition-all ${
-                        currentConversation?.id === conversation.id
-                          ? 'bg-sky-50 border border-sky-200'
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <MessageSquare className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-800 truncate">
-                            {conversation.title}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {conversation.message_count} messages
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {new Date(conversation.updated_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </motion.button>
-                  ))}
-                </AnimatePresence>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Content for other pages */}
-        {currentPage !== 'chat' && (
-          <div className="flex-1 p-4">
-            <div className="text-center py-8 text-gray-500">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                {currentPage === 'analytics' && <BarChart3 className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'exercise' && <Activity className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'photo-analysis' && <Camera className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'grocery-list' && <ShoppingCart className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'reports' && <TrendingUp className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'profile' && <User className="w-8 h-8 text-gray-400" />}
-                {currentPage === 'preferences' && <Settings className="w-8 h-8 text-gray-400" />}
-              </div>
-              <p className="font-medium">
-                {currentPage === 'analytics' && (
-                  <span className="flex items-center justify-center space-x-2">
-                    <span>Progress Analytics</span>
-                    <Crown className="w-4 h-4 text-purple-500" />
-                  </span>
-                )}
-                {currentPage === 'exercise' && 'Exercise & Habits'}
-                {currentPage === 'photo-analysis' && (
-                  <span className="flex items-center justify-center space-x-2">
-                    <span>AI Photo Analysis</span>
-                    <Crown className="w-4 h-4 text-purple-500" />
-                  </span>
-                )}
-                {currentPage === 'grocery-list' && (
-                  <span className="flex items-center justify-center space-x-2">
-                    <span>Smart Grocery Lists</span>
-                    <Crown className="w-4 h-4 text-purple-500" />
-                  </span>
-                )}
-                {currentPage === 'reports' && (
-                  <span className="flex items-center justify-center space-x-2">
-                    <span>Weekly Reports</span>
-                    <Crown className="w-4 h-4 text-purple-500" />
-                  </span>
-                )}
-                {currentPage === 'profile' && 'Profile Settings'}
-                {currentPage === 'preferences' && 'Preferences'}
-              </p>
-              <p className="text-sm">
-                {currentPage === 'analytics' && (
-                  <span className="flex items-center justify-center space-x-1 text-purple-600">
-                    <Crown className="w-3 h-3" />
-                    <span>Premium Feature - Track your health progress</span>
-                  </span>
-                )}
-                {currentPage === 'exercise' && 'Monitor workouts and habits'}
-                {currentPage === 'photo-analysis' && (
-                  <span className="flex items-center justify-center space-x-1 text-purple-600">
-                    <Crown className="w-3 h-3" />
-                    <span>Premium Feature - Analyze food photos with AI</span>
-                  </span>
-                )}
-                {currentPage === 'grocery-list' && (
-                  <span className="flex items-center justify-center space-x-1 text-purple-600">
-                    <Crown className="w-3 h-3" />
-                    <span>Premium Feature - AI-generated shopping lists</span>
-                  </span>
-                )}
-                {currentPage === 'reports' && (
-                  <span className="flex items-center justify-center space-x-1 text-purple-600">
-                    <Crown className="w-3 h-3" />
-                    <span>Premium Feature - Detailed weekly insights</span>
-                  </span>
-                )}
-                {currentPage === 'profile' && 'Manage your personal information'}
-                {currentPage === 'preferences' && 'Customize your experience'}
-              </p>
+        <div className="flex-1 p-4">
+          <div className="text-center py-8 text-gray-500">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              {currentPage === 'chat' && <Heart className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'analytics' && <BarChart3 className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'exercise' && <Activity className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'photo-analysis' && <Camera className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'grocery-list' && <ShoppingCart className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'reports' && <TrendingUp className="w-8 h-8 text-gray-400" />}
+              {currentPage === 'profile' && <User className="w-8 h-8 text-gray-400" />}
             </div>
+            <p className="font-medium">
+              {currentPage === 'chat' && 'AI Health Coach'}
+              {currentPage === 'analytics' && (
+                <span className="flex items-center justify-center space-x-2">
+                  <span>Progress Analytics</span>
+                  <Crown className="w-4 h-4 text-purple-500" />
+                </span>
+              )}
+              {currentPage === 'exercise' && 'Exercise & Habits'}
+              {currentPage === 'photo-analysis' && (
+                <span className="flex items-center justify-center space-x-2">
+                  <span>AI Photo Analysis</span>
+                  <Crown className="w-4 h-4 text-purple-500" />
+                </span>
+              )}
+              {currentPage === 'grocery-list' && (
+                <span className="flex items-center justify-center space-x-2">
+                  <span>Smart Grocery Lists</span>
+                  <Crown className="w-4 h-4 text-purple-500" />
+                </span>
+              )}
+              {currentPage === 'reports' && (
+                <span className="flex items-center justify-center space-x-2">
+                  <span>Weekly Reports</span>
+                  <Crown className="w-4 h-4 text-purple-500" />
+                </span>
+              )}
+              {currentPage === 'profile' && 'Profile Settings'}
+            </p>
+            <p className="text-sm">
+              {currentPage === 'chat' && 'Powered by Google Gemini 2.0 Flash'}
+              {currentPage === 'analytics' && (
+                <span className="flex items-center justify-center space-x-1 text-purple-600">
+                  <Crown className="w-3 h-3" />
+                  <span>Premium Feature - Track your health progress</span>
+                </span>
+              )}
+              {currentPage === 'exercise' && 'Monitor workouts and habits'}
+              {currentPage === 'photo-analysis' && (
+                <span className="flex items-center justify-center space-x-1 text-purple-600">
+                  <Crown className="w-3 h-3" />
+                  <span>Premium Feature - Analyze food photos with AI</span>
+                </span>
+              )}
+              {currentPage === 'grocery-list' && (
+                <span className="flex items-center justify-center space-x-1 text-purple-600">
+                  <Crown className="w-3 h-3" />
+                  <span>Premium Feature - AI-generated shopping lists</span>
+                </span>
+              )}
+              {currentPage === 'reports' && (
+                <span className="flex items-center justify-center space-x-1 text-purple-600">
+                  <Crown className="w-3 h-3" />
+                  <span>Premium Feature - Detailed weekly insights</span>
+                </span>
+              )}
+              {currentPage === 'profile' && 'Manage your personal information'}
+            </p>
           </div>
-        )}
+        </div>
 
         {/* Demo Info Footer */}
         <div className="p-4 border-t border-gray-200">
