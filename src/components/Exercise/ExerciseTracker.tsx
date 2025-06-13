@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save } from 'lucide-react';
 
 interface Workout {
   id: string;
@@ -36,6 +36,14 @@ interface ExerciseOption {
   icon: string;
 }
 
+interface NewHabitForm {
+  name: string;
+  icon: string;
+  target: number;
+  unit: string;
+  color: string;
+}
+
 const EXERCISE_OPTIONS: ExerciseOption[] = [
   // Cardio
   { name: 'Running', type: 'cardio', defaultDuration: 30, estimatedCalories: 300, icon: '🏃‍♂️' },
@@ -64,6 +72,10 @@ const EXERCISE_OPTIONS: ExerciseOption[] = [
   { name: 'Soccer', type: 'sports', defaultDuration: 90, estimatedCalories: 500, icon: '⚽' },
   { name: 'Golf', type: 'sports', defaultDuration: 120, estimatedCalories: 300, icon: '⛳' },
 ];
+
+const HABIT_ICONS = ['💧', '👟', '😴', '🧘', '📚', '🥗', '🏃', '💪', '🎯', '⭐', '🔥', '🌟', '💎', '🎨', '🎵', '📝'];
+const HABIT_COLORS = ['blue', 'green', 'purple', 'pink', 'orange', 'red', 'yellow', 'indigo', 'teal', 'cyan'];
+const HABIT_UNITS = ['glasses', 'steps', 'hours', 'minutes', 'times', 'pages', 'servings', 'miles', 'reps', 'sets'];
 
 export const ExerciseTracker: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -105,6 +117,14 @@ export const ExerciseTracker: React.FC = () => {
     { id: '3', name: 'Sleep', icon: '😴', streak: 3, target: 8, completed: true, color: 'purple', unit: 'hours', currentValue: 8 },
     { id: '4', name: 'Meditation', icon: '🧘', streak: 2, target: 10, completed: false, color: 'pink', unit: 'minutes', currentValue: 5 }
   ]);
+
+  const [newHabitForm, setNewHabitForm] = useState<NewHabitForm>({
+    name: '',
+    icon: '⭐',
+    target: 1,
+    unit: 'times',
+    color: 'blue'
+  });
 
   const weeklyStats = {
     totalWorkouts: 5,
@@ -161,6 +181,32 @@ export const ExerciseTracker: React.FC = () => {
     setShowAddWorkout(false);
   };
 
+  const addHabit = () => {
+    if (!newHabitForm.name.trim()) return;
+
+    const newHabit: HabitTracker = {
+      id: Date.now().toString(),
+      name: newHabitForm.name,
+      icon: newHabitForm.icon,
+      target: newHabitForm.target,
+      unit: newHabitForm.unit,
+      color: newHabitForm.color,
+      streak: 0,
+      completed: false,
+      currentValue: 0
+    };
+
+    setHabits(prev => [...prev, newHabit]);
+    setNewHabitForm({
+      name: '',
+      icon: '⭐',
+      target: 1,
+      unit: 'times',
+      color: 'blue'
+    });
+    setShowAddHabit(false);
+  };
+
   const toggleWorkoutComplete = (workoutId: string) => {
     setWorkouts(prev => 
       prev.map(workout => 
@@ -184,6 +230,10 @@ export const ExerciseTracker: React.FC = () => {
           : habit
       )
     );
+  };
+
+  const deleteHabit = (habitId: string) => {
+    setHabits(prev => prev.filter(habit => habit.id !== habitId));
   };
 
   const renderCalendar = () => {
@@ -277,6 +327,118 @@ export const ExerciseTracker: React.FC = () => {
               </div>
             </button>
           ))}
+        </div>
+      </motion.div>
+    </div>
+  );
+
+  const AddHabitModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white rounded-xl p-6 max-w-md w-full"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-gray-800">Add New Habit</h3>
+          <button
+            onClick={() => setShowAddHabit(false)}
+            className="text-gray-400 hover:text-gray-600"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Habit Name</label>
+            <input
+              type="text"
+              value={newHabitForm.name}
+              onChange={(e) => setNewHabitForm(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="e.g., Read books, Drink water"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+            <div className="grid grid-cols-8 gap-2">
+              {HABIT_ICONS.map((icon) => (
+                <button
+                  key={icon}
+                  onClick={() => setNewHabitForm(prev => ({ ...prev, icon }))}
+                  className={`p-2 text-xl rounded-lg border-2 transition-all ${
+                    newHabitForm.icon === icon
+                      ? 'border-purple-500 bg-purple-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  {icon}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Target</label>
+              <input
+                type="number"
+                value={newHabitForm.target}
+                onChange={(e) => setNewHabitForm(prev => ({ ...prev, target: parseInt(e.target.value) || 1 }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                min="1"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+              <select
+                value={newHabitForm.unit}
+                onChange={(e) => setNewHabitForm(prev => ({ ...prev, unit: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              >
+                {HABIT_UNITS.map((unit) => (
+                  <option key={unit} value={unit}>{unit}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+            <div className="grid grid-cols-5 gap-2">
+              {HABIT_COLORS.map((color) => (
+                <button
+                  key={color}
+                  onClick={() => setNewHabitForm(prev => ({ ...prev, color }))}
+                  className={`w-8 h-8 rounded-full border-2 transition-all bg-${color}-500 ${
+                    newHabitForm.color === color
+                      ? 'border-gray-800 scale-110'
+                      : 'border-gray-300 hover:scale-105'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end space-x-3 mt-6">
+          <button
+            onClick={() => setShowAddHabit(false)}
+            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={addHabit}
+            disabled={!newHabitForm.name.trim()}
+            className="flex items-center space-x-2 px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" />
+            <span>Add Habit</span>
+          </button>
         </div>
       </motion.div>
     </div>
@@ -590,14 +752,24 @@ export const ExerciseTracker: React.FC = () => {
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-800">Daily Habits Tracker</h3>
-              <button className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors">
+              <button 
+                onClick={() => setShowAddHabit(true)}
+                className="w-8 h-8 bg-purple-500 text-white rounded-full flex items-center justify-center hover:bg-purple-600 transition-colors"
+              >
                 <Plus className="w-4 h-4" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {habits.map((habit) => (
-                <div key={habit.id} className="p-6 border border-gray-200 rounded-xl">
+                <div key={habit.id} className="p-6 border border-gray-200 rounded-xl relative group">
+                  <button
+                    onClick={() => deleteHabit(habit.id)}
+                    className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-3">
                       <div className="text-3xl">{habit.icon}</div>
@@ -649,6 +821,21 @@ export const ExerciseTracker: React.FC = () => {
                 </div>
               ))}
             </div>
+
+            {habits.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Target className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">No Habits Yet</h3>
+                <p className="text-gray-600 mb-6">Start building healthy habits by adding your first one!</p>
+                <button
+                  onClick={() => setShowAddHabit(true)}
+                  className="flex items-center space-x-2 bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition-colors mx-auto"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Add Your First Habit</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -703,6 +890,11 @@ export const ExerciseTracker: React.FC = () => {
       {/* Add Workout Modal */}
       <AnimatePresence>
         {showAddWorkout && <AddWorkoutModal />}
+      </AnimatePresence>
+
+      {/* Add Habit Modal */}
+      <AnimatePresence>
+        {showAddHabit && <AddHabitModal />}
       </AnimatePresence>
     </div>
   );
