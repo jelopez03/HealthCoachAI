@@ -50,9 +50,18 @@ export const ProgressDashboard: React.FC = () => {
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <TrendingUp className="w-8 h-8" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">Progress Analytics</h1>
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <h1 className="text-3xl font-bold">Progress Analytics</h1>
+                <Crown className="w-8 h-8 text-yellow-300" />
+              </div>
               <p className="text-emerald-100">Track your health journey with detailed insights</p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+              <div className="flex items-center space-x-2 text-yellow-300">
+                <Crown className="w-5 h-5" />
+                <span className="font-semibold">Premium Feature</span>
+              </div>
             </div>
           </div>
         </div>
@@ -129,6 +138,7 @@ export const ProgressDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Weight className="w-5 h-5 mr-2 text-purple-500" />
             Weight Progress (lbs)
+            <Crown className="w-4 h-4 ml-2 text-purple-500" />
           </h3>
           <div className="h-48 flex items-end justify-between space-x-2 bg-gray-50 rounded-lg p-4">
             {progressData.map((data, index) => {
@@ -169,6 +179,7 @@ export const ProgressDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Flame className="w-5 h-5 mr-2 text-orange-500" />
             Daily Calories
+            <Crown className="w-4 h-4 ml-2 text-purple-500" />
           </h3>
           <div className="h-48 flex items-end justify-between space-x-2 bg-gray-50 rounded-lg p-4">
             {progressData.map((data, index) => {
@@ -210,6 +221,7 @@ export const ProgressDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Activity className="w-5 h-5 mr-2 text-blue-500" />
             Daily Steps
+            <Crown className="w-4 h-4 ml-2 text-purple-500" />
           </h3>
           <div className="h-48 flex items-end justify-between space-x-2 bg-gray-50 rounded-lg p-4">
             {progressData.map((data, index) => {
@@ -251,6 +263,7 @@ export const ProgressDashboard: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
             <Droplets className="w-5 h-5 mr-2 text-cyan-500" />
             Water Intake (liters)
+            <Crown className="w-4 h-4 ml-2 text-purple-500" />
           </h3>
           <div className="h-48 flex items-end justify-between space-x-2 bg-gray-50 rounded-lg p-4">
             {progressData.map((data, index) => {
@@ -293,6 +306,7 @@ export const ProgressDashboard: React.FC = () => {
         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
           <Award className="w-5 h-5 mr-2 text-yellow-500" />
           Recent Achievements
+          <Crown className="w-4 h-4 ml-2 text-purple-500" />
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded-lg">

@@ -315,28 +315,39 @@ export const SmartGroceryList: React.FC = () => {
               <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                 <ShoppingCart className="w-8 h-8" />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold">Smart Grocery Lists</h1>
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <h1 className="text-3xl font-bold">Smart Grocery Lists</h1>
+                  <Crown className="w-8 h-8 text-yellow-300" />
+                </div>
                 <p className="text-emerald-100">AI-generated and saved shopping lists</p>
               </div>
             </div>
-            <button
-              onClick={generateGroceryList}
-              disabled={generating}
-              className="flex items-center space-x-2 bg-white bg-opacity-20 text-white px-6 py-3 rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50"
-            >
-              {generating ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Generating...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  <span>Generate New List</span>
-                </>
-              )}
-            </button>
+            <div className="flex items-center space-x-4">
+              <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+                <div className="flex items-center space-x-2 text-yellow-300">
+                  <Crown className="w-5 h-5" />
+                  <span className="font-semibold">Premium Feature</span>
+                </div>
+              </div>
+              <button
+                onClick={generateGroceryList}
+                disabled={generating}
+                className="flex items-center space-x-2 bg-white bg-opacity-20 text-white px-6 py-3 rounded-lg hover:bg-opacity-30 transition-all disabled:opacity-50"
+              >
+                {generating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <span>Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    <span>Generate New List</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -353,6 +364,7 @@ export const SmartGroceryList: React.FC = () => {
         >
           <Save className="w-5 h-5" />
           <span className="font-medium">Saved Lists ({savedLists.length})</span>
+          <Crown className="w-4 h-4 text-purple-500" />
         </button>
         <button
           onClick={() => setView('current')}
@@ -369,6 +381,7 @@ export const SmartGroceryList: React.FC = () => {
               {currentList.reduce((total, category) => total + category.items.length, 0)}
             </span>
           )}
+          <Crown className="w-4 h-4 text-purple-500" />
         </button>
       </div>
 
@@ -411,6 +424,7 @@ export const SmartGroceryList: React.FC = () => {
                         {list.is_favorite && (
                           <Star className="w-4 h-4 text-yellow-500 fill-current" />
                         )}
+                        <Crown className="w-4 h-4 text-purple-500" />
                       </div>
                       <p className="text-sm text-gray-600 mb-3">{list.description}</p>
                     </div>
@@ -485,7 +499,10 @@ export const SmartGroceryList: React.FC = () => {
               className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center"
             >
               <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No Current List</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center space-x-2">
+                <span>No Current List</span>
+                <Crown className="w-5 h-5 text-purple-500" />
+              </h3>
               <p className="text-gray-600 mb-6">
                 Generate a new grocery list or load a saved one to get started
               </p>
@@ -526,7 +543,10 @@ export const SmartGroceryList: React.FC = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800">Current Shopping List</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 flex items-center space-x-2">
+                      <span>Current Shopping List</span>
+                      <Crown className="w-5 h-5 text-purple-500" />
+                    </h3>
                     <p className="text-gray-600">
                       {currentList.reduce((total, category) => total + category.items.length, 0)} items • 
                       {currentList.reduce((total, category) => total + category.items.filter(item => item.checked).length, 0)} completed
@@ -566,6 +586,7 @@ export const SmartGroceryList: React.FC = () => {
                     <span className="ml-2 text-sm text-gray-500">
                       ({category.items.filter(item => !item.checked).length} remaining)
                     </span>
+                    <Crown className="w-4 h-4 ml-2 text-purple-500" />
                   </h3>
 
                   <div className="space-y-2">

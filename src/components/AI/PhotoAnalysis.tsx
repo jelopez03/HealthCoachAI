@@ -100,9 +100,18 @@ export const PhotoAnalysis: React.FC = () => {
             <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
               <Scan className="w-8 h-8" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold">AI Photo Analysis</h1>
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-2">
+                <h1 className="text-3xl font-bold">AI Photo Analysis</h1>
+                <Crown className="w-8 h-8 text-yellow-300" />
+              </div>
               <p className="text-indigo-100">Upload food photos for instant nutrition insights</p>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+              <div className="flex items-center space-x-2 text-yellow-300">
+                <Crown className="w-5 h-5" />
+                <span className="font-semibold">Premium Feature</span>
+              </div>
             </div>
           </div>
         </div>
@@ -122,7 +131,10 @@ export const PhotoAnalysis: React.FC = () => {
               className="border-2 border-dashed border-gray-300 rounded-xl p-12 cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-all"
             >
               <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">Upload Food Photo</h3>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2 flex items-center justify-center space-x-2">
+                <span>Upload Food Photo</span>
+                <Crown className="w-5 h-5 text-purple-500" />
+              </h3>
               <p className="text-gray-600 mb-4">
                 Take a photo or upload an image of your meal for AI analysis
               </p>
@@ -197,7 +209,10 @@ export const PhotoAnalysis: React.FC = () => {
         >
           {/* Summary */}
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Nutrition Summary</h3>
+            <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+              <span>Nutrition Summary</span>
+              <Crown className="w-5 h-5 ml-2 text-purple-500" />
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-4 bg-orange-50 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">{analysis.total_calories}</div>
@@ -251,6 +266,7 @@ export const PhotoAnalysis: React.FC = () => {
             <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <Sparkles className="w-5 h-5 mr-2 text-indigo-500" />
               AI Suggestions
+              <Crown className="w-4 h-4 ml-2 text-purple-500" />
             </h3>
             <div className="space-y-3">
               {analysis.suggestions.map((suggestion, index) => (

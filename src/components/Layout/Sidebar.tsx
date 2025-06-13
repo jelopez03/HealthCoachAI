@@ -92,14 +92,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const navigationItems = [
-    { id: 'chat', label: 'Conversations', icon: MessageSquare },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'exercise', label: 'Exercise & Habits', icon: Activity },
-    { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera },
-    { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart },
-    { id: 'reports', label: 'Weekly Reports', icon: TrendingUp },
-    { id: 'profile', label: 'Profile Settings', icon: User },
-    { id: 'preferences', label: 'Preferences', icon: Settings }
+    { id: 'chat', label: 'Conversations', icon: MessageSquare, isPremium: false },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
+    { id: 'exercise', label: 'Exercise & Habits', icon: Activity, isPremium: false },
+    { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera, isPremium: true },
+    { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart, isPremium: true },
+    { id: 'reports', label: 'Weekly Reports', icon: TrendingUp, isPremium: true },
+    { id: 'profile', label: 'Profile Settings', icon: User, isPremium: false },
+    { id: 'preferences', label: 'Preferences', icon: Settings, isPremium: false }
   ];
 
   return (
@@ -163,6 +163,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center space-x-3">
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
+                  {item.isPremium && (
+                    <Crown className="w-4 h-4 text-purple-500" />
+                  )}
                   {item.id === 'profile' && !profileCompleted && (
                     <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
                   )}
@@ -251,20 +254,60 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {currentPage === 'preferences' && <Settings className="w-8 h-8 text-gray-400" />}
               </div>
               <p className="font-medium">
-                {currentPage === 'analytics' && 'Progress Analytics'}
+                {currentPage === 'analytics' && (
+                  <span className="flex items-center justify-center space-x-2">
+                    <span>Progress Analytics</span>
+                    <Crown className="w-4 h-4 text-purple-500" />
+                  </span>
+                )}
                 {currentPage === 'exercise' && 'Exercise & Habits'}
-                {currentPage === 'photo-analysis' && 'AI Photo Analysis'}
-                {currentPage === 'grocery-list' && 'Smart Grocery Lists'}
-                {currentPage === 'reports' && 'Weekly Reports'}
+                {currentPage === 'photo-analysis' && (
+                  <span className="flex items-center justify-center space-x-2">
+                    <span>AI Photo Analysis</span>
+                    <Crown className="w-4 h-4 text-purple-500" />
+                  </span>
+                )}
+                {currentPage === 'grocery-list' && (
+                  <span className="flex items-center justify-center space-x-2">
+                    <span>Smart Grocery Lists</span>
+                    <Crown className="w-4 h-4 text-purple-500" />
+                  </span>
+                )}
+                {currentPage === 'reports' && (
+                  <span className="flex items-center justify-center space-x-2">
+                    <span>Weekly Reports</span>
+                    <Crown className="w-4 h-4 text-purple-500" />
+                  </span>
+                )}
                 {currentPage === 'profile' && 'Profile Settings'}
                 {currentPage === 'preferences' && 'Preferences'}
               </p>
               <p className="text-sm">
-                {currentPage === 'analytics' && 'Track your health progress'}
+                {currentPage === 'analytics' && (
+                  <span className="flex items-center justify-center space-x-1 text-purple-600">
+                    <Crown className="w-3 h-3" />
+                    <span>Premium Feature - Track your health progress</span>
+                  </span>
+                )}
                 {currentPage === 'exercise' && 'Monitor workouts and habits'}
-                {currentPage === 'photo-analysis' && 'Analyze food photos with AI'}
-                {currentPage === 'grocery-list' && 'AI-generated shopping lists'}
-                {currentPage === 'reports' && 'Detailed weekly insights'}
+                {currentPage === 'photo-analysis' && (
+                  <span className="flex items-center justify-center space-x-1 text-purple-600">
+                    <Crown className="w-3 h-3" />
+                    <span>Premium Feature - Analyze food photos with AI</span>
+                  </span>
+                )}
+                {currentPage === 'grocery-list' && (
+                  <span className="flex items-center justify-center space-x-1 text-purple-600">
+                    <Crown className="w-3 h-3" />
+                    <span>Premium Feature - AI-generated shopping lists</span>
+                  </span>
+                )}
+                {currentPage === 'reports' && (
+                  <span className="flex items-center justify-center space-x-1 text-purple-600">
+                    <Crown className="w-3 h-3" />
+                    <span>Premium Feature - Detailed weekly insights</span>
+                  </span>
+                )}
                 {currentPage === 'profile' && 'Manage your personal information'}
                 {currentPage === 'preferences' && 'Customize your experience'}
               </p>

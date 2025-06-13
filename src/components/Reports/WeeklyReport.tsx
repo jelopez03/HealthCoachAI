@@ -44,12 +44,23 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ onUpgrade }) => {
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-500 to-teal-500 p-8 text-white">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Weekly Health Report</h1>
-              <p className="text-emerald-100">{reportData.week}</p>
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-8 h-8" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-3 mb-2">
+                  <h1 className="text-3xl font-bold">Weekly Health Report</h1>
+                  <Crown className="w-8 h-8 text-yellow-300" />
+                </div>
+                <p className="text-emerald-100">{reportData.week}</p>
+              </div>
             </div>
-            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <TrendingUp className="w-8 h-8" />
+            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+              <div className="flex items-center space-x-2 text-yellow-300">
+                <Crown className="w-5 h-5" />
+                <span className="font-semibold">Premium Feature</span>
+              </div>
             </div>
           </div>
         </div>
@@ -122,6 +133,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ onUpgrade }) => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <Award className="w-5 h-5 mr-2 text-yellow-500" />
               This Week's Achievements
+              <Crown className="w-4 h-4 ml-2 text-purple-500" />
             </h2>
             <div className="space-y-3">
               {reportData.achievements.map((achievement, index) => (
@@ -142,6 +154,7 @@ export const WeeklyReport: React.FC<WeeklyReportProps> = ({ onUpgrade }) => {
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2 text-blue-500" />
               AI Insights & Recommendations
+              <Crown className="w-4 h-4 ml-2 text-purple-500" />
             </h2>
             <div className="space-y-3">
               {reportData.insights.map((insight, index) => (
