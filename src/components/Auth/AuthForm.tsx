@@ -2,13 +2,18 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Heart, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface AuthFormProps {
-  mode: 'signin' | 'signup';
-  onToggleMode: () => void;
+  mode?: 'signin' | 'signup';
+  onToggleMode?: () => void;
 }
 
-export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
+export const AuthForm: React.FC<AuthFormProps> = ({ 
+  mode: initialMode = 'signin', 
+  onToggleMode 
+}) => {
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -18,11 +23,28 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
 
   const { signIn, signUp } = useAuth();
 
+  const handleToggleMode = () => {
+    if (onToggleMode) {
+      onToggleMode();
+    } else {
+      setMode(mode === 'signin' ? 'signup' : 'signin');
+    }
+    setError('');
+    setSuccess('');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
+
+    // Check if Supabase is configured
+    if (!isSupabaseConfigured()) {
+      setError('Database connection is not configured. Please set up your Supabase environment variables.');
+      setLoading(false);
+      return;
+    }
 
     // Basic validation
     if (!email || !password) {
@@ -78,6 +100,66 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
       setLoading(false);
     }
   };
+
+  // Show configuration warning if Supabase is not set up
+  if (!isSupabaseConfigured()) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="text-center mb-8">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-sky-500 to-emerald-500 rounded-2xl mb-4"
+            >
+              <Heart className="w-8 h-8 text-white" />
+            </motion.div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-sky-600 to-emerald-600 bg-clip-text text-transparent">
+              HealthCoach AI
+            </h1>
+            <p className="text-gray-600 mt-2">
+              Your personalized nutrition companion
+            </p>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-2xl shadow-xl p-8"
+          >
+            <div className="bg-amber-50 border border-amber-200 text-amber-700 p-4 rounded-lg mb-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="text-sm">
+                <strong>Setup Required:</strong> Please configure your Supabase environment variables to enable authentication and database features.
+                <div className="mt-2 text-xs">
+                  <p>Add these to your .env file:</p>
+                  <ul className="list-disc list-inside mt-1 space-y-1">
+                    <li>VITE_SUPABASE_URL</li>
+                    <li>VITE_SUPABASE_ANON_KEY</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                Database Connection Required
+              </h2>
+              <p className="text-gray-600">
+                Please set up your Supabase configuration to continue
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-emerald-50 flex items-center justify-center p-4">
@@ -222,7 +304,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ mode, onToggleMode }) => {
             <p className="text-gray-600">
               {mode === 'signin' ? "Don't have an account?" : 'Already have an account?'}
               <button
-                onClick={onToggleMode}
+                onClick={handleToggleMode}
                 className="ml-2 text-sky-600 hover:text-sky-700 font-medium"
               >
                 {mode === 'signin' ? 'Sign up' : 'Sign in'}

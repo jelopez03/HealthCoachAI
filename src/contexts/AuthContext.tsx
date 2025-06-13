@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import type { User, UserProfile } from '../types';
-import { HealthCoachingAPI } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -29,49 +28,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // For demo purposes, set up mock user and profile
-    const mockUser: User = {
-      id: 'demo-user-id',
-      email: 'demo@healthcoach.ai',
-      created_at: new Date().toISOString(),
-      subscription_status: 'premium'
-    };
+    // Skip auth setup if Supabase is not configured
+    if (!isSupabaseConfigured()) {
+      console.warn('Supabase is not configured. Please set up your environment variables.');
+      setLoading(false);
+      return;
+    }
 
-    setUser(mockUser);
-    fetchProfile(mockUser.id);
-    setLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          created_at: session.user.created_at,
+          subscription_status: 'free' // Default, should be fetched from RevenueCat
+        });
+        fetchProfile(session.user.id);
+      }
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          created_at: session.user.created_at,
+          subscription_status: 'free'
+        });
+        await fetchProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string) => {
     try {
-      if (isSupabaseConfigured()) {
-        const userProfile = await HealthCoachingAPI.getUserProfile(userId);
-        setProfile(userProfile);
-      } else {
-        // Use mock profile for demo
-        const mockProfile: UserProfile = {
-          id: 'demo-profile-id',
-          user_id: userId,
-          name: '',
-          email: 'demo@healthcoach.ai',
-          age: 0,
-          gender: 'other',
-          height: 0,
-          height_feet: 0,
-          height_inches: 0,
-          weight: 0,
-          activity_level: 'moderate',
-          health_goals: [],
-          dietary_restrictions: [],
-          allergies: [],
-          current_habits: '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        setProfile(mockProfile);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
       }
+
+      setProfile(data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error in fetchProfile:', error);
     }
   };
 
@@ -197,39 +212,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updateProfile = async (profileData: Partial<UserProfile>) => {
     if (!user) throw new Error('No user logged in');
     
+    if (!isSupabaseConfigured()) {
+      throw new Error('Supabase is not configured. Please set up your environment variables.');
+    }
+
     try {
-      if (isSupabaseConfigured()) {
-        // Use real Supabase database
-        const updatedProfile = {
-          ...profileData,
-          user_id: user.id,
-          updated_at: new Date().toISOString()
-        };
+      const updatedProfile = {
+        ...profileData,
+        user_id: user.id,
+        updated_at: new Date().toISOString()
+      };
 
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .upsert(updatedProfile)
-          .select()
-          .single();
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert(updatedProfile)
+        .select()
+        .single();
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Update local state
-        setProfile(data);
-      } else {
-        // For demo mode, update local state only
-        const updatedProfile = {
-          ...profile,
-          ...profileData,
-          user_id: user.id,
-          updated_at: new Date().toISOString()
-        } as UserProfile;
-
-        setProfile(updatedProfile);
-        
-        // Store in localStorage for persistence in demo mode
-        localStorage.setItem('demo-user-profile', JSON.stringify(updatedProfile));
-      }
+      // Update local state
+      setProfile(data);
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;

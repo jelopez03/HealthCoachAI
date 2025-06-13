@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle } from 'lucide-react';
+import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle, LogOut } from 'lucide-react';
 import { PremiumUpgrade } from '../Premium/PremiumUpgrade';
+import { useAuth } from '../../contexts/AuthContext';
 import type { Conversation, User as UserType, UserProfile } from '../../types';
 
 interface SidebarProps {
@@ -11,7 +12,7 @@ interface SidebarProps {
   onNavigate?: (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => void;
   currentPage?: string;
   user: UserType;
-  profile: UserProfile;
+  profile: UserProfile | null;
   profileCompleted?: boolean;
 }
 
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   profile,
   profileCompleted = false
 }) => {
+  const { signOut } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
@@ -41,24 +43,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Mock conversations for demo
   const mockConversations: Conversation[] = [
     {
-      id: '550e8400-e29b-41d4-a716-446655440001',
-      user_id: '550e8400-e29b-41d4-a716-446655440000',
+      id: generateMockUUID(),
+      user_id: user.id,
       title: 'Meal Planning for Weight Loss',
       message_count: 8,
       created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
       updated_at: new Date(Date.now() - 3600000).toISOString() // 1 hour ago
     },
     {
-      id: '550e8400-e29b-41d4-a716-446655440002',
-      user_id: '550e8400-e29b-41d4-a716-446655440000',
+      id: generateMockUUID(),
+      user_id: user.id,
       title: 'Vegetarian Protein Sources',
       message_count: 5,
       created_at: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
       updated_at: new Date(Date.now() - 7200000).toISOString() // 2 hours ago
     },
     {
-      id: '550e8400-e29b-41d4-a716-446655440003',
-      user_id: '550e8400-e29b-41d4-a716-446655440000',
+      id: generateMockUUID(),
+      user_id: user.id,
       title: 'Quick Healthy Breakfast Ideas',
       message_count: 12,
       created_at: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
@@ -69,7 +71,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   useEffect(() => {
     // Load mock conversations
     setConversations(mockConversations);
-  }, []);
+  }, [user.id]);
 
   const handleNewConversation = async () => {
     // Create mock new conversation
@@ -89,6 +91,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleUpgrade = (planId: string) => {
     console.log(`User upgraded to ${planId} plan`);
     setShowPremiumUpgrade(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   const navigationItems = [
@@ -136,16 +146,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Demo User Info */}
+          {/* User Info */}
           <div className="bg-gradient-to-r from-emerald-50 to-sky-50 p-3 rounded-lg mb-4 border border-emerald-200">
-            <div className="flex items-center space-x-2 mb-1">
-              <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                <User className="w-3 h-3 text-white" />
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <User className="w-3 h-3 text-white" />
+                </div>
+                <span className="font-medium text-emerald-800">
+                  {profile?.name || user.email.split('@')[0]}
+                </span>
+                {user.subscription_status === 'premium' && (
+                  <Crown className="w-4 h-4 text-purple-500" />
+                )}
               </div>
-              <span className="font-medium text-emerald-800">{profile.name}</span>
-              <Crown className="w-4 h-4 text-purple-500" />
+              <button
+                onClick={handleSignOut}
+                className="text-emerald-600 hover:text-emerald-800 transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
-            <p className="text-xs text-emerald-700">Demo Mode - All Features Available</p>
+            <p className="text-xs text-emerald-700">{user.email}</p>
           </div>
 
           {/* Navigation */}
@@ -315,24 +338,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
 
-        {/* Demo Info Footer */}
-        <div className="p-4 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
-            <div className="flex items-center justify-center space-x-2 mb-2">
-              <Crown className="w-5 h-5 text-purple-600" />
-              <h3 className="font-semibold text-purple-800">Demo Version</h3>
+        {/* Premium Upgrade Footer */}
+        {user.subscription_status !== 'premium' && (
+          <div className="p-4 border-t border-gray-200">
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
+              <div className="flex items-center justify-center space-x-2 mb-2">
+                <Crown className="w-5 h-5 text-purple-600" />
+                <h3 className="font-semibold text-purple-800">Upgrade to Premium</h3>
+              </div>
+              <p className="text-sm text-purple-700 mb-3">
+                Unlock advanced analytics, AI photo analysis, and more
+              </p>
+              <button 
+                onClick={() => setShowPremiumUpgrade(true)}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
+              >
+                View Pricing Plans
+              </button>
             </div>
-            <p className="text-sm text-purple-700 mb-3">
-              All premium features are unlocked for demonstration
-            </p>
-            <button 
-              onClick={() => setShowPremiumUpgrade(true)}
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
-            >
-              View Pricing Plans
-            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Premium Upgrade Modal */}
