@@ -9,9 +9,12 @@ export interface UserProfile {
   id: string;
   user_id: string;
   name: string;
+  email?: string; // Added email field
   age: number;
   gender: 'male' | 'female' | 'other';
-  height: number; // in inches
+  height: number; // in inches (for backward compatibility)
+  height_feet?: number; // feet component of height
+  height_inches?: number; // inches component of height
   weight: number; // in lbs
   activity_level: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
   health_goals: string[];

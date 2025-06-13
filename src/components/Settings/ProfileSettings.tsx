@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle } from 'lucide-react';
+import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X } from 'lucide-react';
 import type { UserProfile } from '../../types';
 
 const HEALTH_GOALS = [
@@ -55,10 +55,6 @@ const mockProfile: UserProfile = {
   updated_at: new Date().toISOString()
 };
 
-const mockUser = {
-  email: 'demo@healthcoach.ai'
-};
-
 interface ProfileSettingsProps {
   onProfileComplete?: () => void;
 }
@@ -66,11 +62,21 @@ interface ProfileSettingsProps {
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileComplete }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [heightError, setHeightError] = useState('');
+  
+  // Convert height from cm to feet/inches for display
+  const totalInches = Math.round(mockProfile.height * 0.393701);
+  const feet = Math.floor(totalInches / 12);
+  const inches = totalInches % 12;
+
   const [formData, setFormData] = useState({
     name: mockProfile.name,
+    email: 'demo@healthcoach.ai',
     age: mockProfile.age.toString(),
     gender: mockProfile.gender,
-    height: mockProfile.height.toString(),
+    height_feet: feet.toString(),
+    height_inches: inches.toString(),
     weight: mockProfile.weight.toString(),
     activity_level: mockProfile.activity_level,
     health_goals: mockProfile.health_goals,
@@ -78,6 +84,48 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
     allergies: mockProfile.allergies,
     current_habits: mockProfile.current_habits
   });
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    }
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validateHeight = (): boolean => {
+    const feet = parseInt(formData.height_feet);
+    const inches = parseInt(formData.height_inches);
+    
+    if (isNaN(feet) || isNaN(inches)) {
+      setHeightError('Please enter valid numbers for height');
+      return false;
+    }
+    if (feet < 3 || feet > 8) {
+      setHeightError('Height must be between 3 and 8 feet');
+      return false;
+    }
+    if (inches < 0 || inches >= 12) {
+      setHeightError('Inches must be between 0 and 11');
+      return false;
+    }
+    if (feet === 3 && inches < 6) {
+      setHeightError('Minimum height is 3 feet 6 inches');
+      return false;
+    }
+    if (feet === 8 && inches > 0) {
+      setHeightError('Maximum height is 8 feet');
+      return false;
+    }
+    setHeightError('');
+    return true;
+  };
 
   const handleArrayToggle = (array: string[], value: string, field: 'health_goals' | 'dietary_restrictions' | 'allergies') => {
     const newArray = array.includes(value)
@@ -89,8 +137,10 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
 
   const isProfileComplete = () => {
     return formData.name.trim() !== '' &&
+           formData.email.trim() !== '' &&
            formData.age !== '' &&
-           formData.height !== '' &&
+           formData.height_feet !== '' &&
+           formData.height_inches !== '' &&
            formData.weight !== '' &&
            formData.health_goals.length > 0;
   };
@@ -99,6 +149,15 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
+
+    // Validate email and height
+    const isEmailValid = validateEmail(formData.email);
+    const isHeightValid = validateHeight();
+
+    if (!isEmailValid || !isHeightValid) {
+      setLoading(false);
+      return;
+    }
 
     try {
       // Simulate API call for demo
@@ -190,16 +249,34 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="email"
-                    value={mockUser.email}
-                    disabled
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, email: e.target.value }));
+                      if (emailError) validateEmail(e.target.value);
+                    }}
+                    onBlur={(e) => validateEmail(e.target.value)}
+                    className={`w-full pl-10 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                      emailError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                    }`}
+                    placeholder="Enter your email address"
+                    required
                   />
+                  {emailError ? (
+                    <X className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-red-500" />
+                  ) : formData.email && !emailError ? (
+                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-green-500" />
+                  ) : null}
                 </div>
+                {emailError && (
+                  <p className="text-red-500 text-sm mt-1">{emailError}</p>
+                )}
               </div>
 
               <div>
@@ -236,21 +313,55 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Height (inches) <span className="text-red-500">*</span>
+                  Height <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="number"
-                    value={formData.height}
-                    onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
-                    placeholder="67"
-                    min="36"
-                    max="96"
-                    required
-                  />
+                <div className="flex items-center space-x-3">
+                  <div className="relative flex-1">
+                    <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="number"
+                      value={formData.height_feet}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, height_feet: e.target.value }));
+                        if (heightError) validateHeight();
+                      }}
+                      onBlur={validateHeight}
+                      className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                        heightError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      }`}
+                      placeholder="5"
+                      min="3"
+                      max="8"
+                      required
+                    />
+                  </div>
+                  <span className="text-gray-600 font-medium">feet</span>
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      value={formData.height_inches}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, height_inches: e.target.value }));
+                        if (heightError) validateHeight();
+                      }}
+                      onBlur={validateHeight}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent ${
+                        heightError ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                      }`}
+                      placeholder="8"
+                      min="0"
+                      max="11"
+                      required
+                    />
+                  </div>
+                  <span className="text-gray-600 font-medium">inches</span>
                 </div>
+                {heightError && (
+                  <p className="text-red-500 text-sm mt-1">{heightError}</p>
+                )}
+                <p className="text-gray-500 text-xs mt-1">
+                  Example: 5 feet 8 inches (5' 8")
+                </p>
               </div>
 
               <div>
@@ -273,6 +384,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
               </div>
             </div>
           </div>
+
+          {/* Section Divider */}
+          <hr className="border-t-2 border-gray-100 my-8" />
 
           {/* Activity Level */}
           <div>
@@ -312,6 +426,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
             </div>
           </div>
 
+          {/* Section Divider */}
+          <hr className="border-t-2 border-gray-100 my-8" />
+
           {/* Health Goals */}
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
@@ -339,6 +456,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
               <p className="text-sm text-red-500 mt-2">Please select at least one health goal.</p>
             )}
           </div>
+
+          {/* Section Divider */}
+          <hr className="border-t-2 border-gray-100 my-8" />
 
           {/* Dietary Preferences */}
           <div>
@@ -393,6 +513,9 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
             </div>
           </div>
 
+          {/* Section Divider */}
+          <hr className="border-t-2 border-gray-100 my-8" />
+
           {/* Current Habits */}
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-6">Current Habits & Notes</h2>
@@ -411,7 +534,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               type="submit"
-              disabled={loading}
+              disabled={loading || !!emailError || !!heightError}
               className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all disabled:opacity-50 ${
                 isProfileComplete()
                   ? 'bg-gradient-to-r from-sky-500 to-emerald-500 text-white hover:from-sky-600 hover:to-emerald-600'
