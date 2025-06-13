@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import { Sidebar } from './components/Layout/Sidebar';
 import { ChatInterface } from './components/Chat/ChatInterface';
 import { ProfileSettings } from './components/Settings/ProfileSettings';
@@ -112,52 +113,54 @@ const App: React.FC = () => {
   };
 
   return (
-    <Router>
-      <div className="h-screen flex bg-gray-50">
-        <Sidebar
-          currentConversation={currentConversation}
-          onConversationSelect={setCurrentConversation}
-          onNewConversation={() => setCurrentConversation(null)}
-          onNavigate={handleNavigate}
-          currentPage={currentPage}
-          user={mockUser}
-          profile={mockProfile}
-        />
-        
-        <div className="flex-1 flex flex-col">
-          {/* Header with Bolt Badge */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-end">
-            <div className="flex items-center">
-              <a 
-                href="https://bolt.new/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <img 
-                  src="/black_circle_360x360.png" 
-                  alt="Powered by Bolt" 
-                  className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
-                  title="Powered by Bolt - Click to visit bolt.new"
-                />
-              </a>
+    <AuthProvider>
+      <Router>
+        <div className="h-screen flex bg-gray-50">
+          <Sidebar
+            currentConversation={currentConversation}
+            onConversationSelect={setCurrentConversation}
+            onNewConversation={() => setCurrentConversation(null)}
+            onNavigate={handleNavigate}
+            currentPage={currentPage}
+            user={mockUser}
+            profile={mockProfile}
+          />
+          
+          <div className="flex-1 flex flex-col">
+            {/* Header with Bolt Badge */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-end">
+              <div className="flex items-center">
+                <a 
+                  href="https://bolt.new/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  <img 
+                    src="/black_circle_360x360.png" 
+                    alt="Powered by Bolt" 
+                    className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
+                    title="Powered by Bolt - Click to visit bolt.new"
+                  />
+                </a>
+              </div>
+            </div>
+            
+            <div className="flex-1">
+              {renderMainContent()}
             </div>
           </div>
-          
-          <div className="flex-1">
-            {renderMainContent()}
-          </div>
         </div>
-      </div>
 
-      {/* Premium Upgrade Modal */}
-      {showPremiumUpgrade && (
-        <PremiumUpgrade
-          onClose={() => setShowPremiumUpgrade(false)}
-          onUpgrade={handleUpgrade}
-        />
-      )}
-    </Router>
+        {/* Premium Upgrade Modal */}
+        {showPremiumUpgrade && (
+          <PremiumUpgrade
+            onClose={() => setShowPremiumUpgrade(false)}
+            onUpgrade={handleUpgrade}
+          />
+        )}
+      </Router>
+    </AuthProvider>
   );
 };
 
