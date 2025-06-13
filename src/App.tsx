@@ -125,7 +125,21 @@ const App: React.FC = () => {
         />
         
         <div className="flex-1 flex flex-col">
-          {renderMainContent()}
+          {/* Header with Bolt Badge */}
+          <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-end">
+            <div className="flex items-center">
+              <img 
+                src="/black_circle_360x360.png" 
+                alt="Powered by Bolt" 
+                className="w-12 h-12 opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
+                title="Powered by Bolt"
+              />
+            </div>
+          </div>
+          
+          <div className="flex-1">
+            {renderMainContent()}
+          </div>
         </div>
       </div>
 
