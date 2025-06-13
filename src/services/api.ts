@@ -134,26 +134,38 @@ export class HealthCoachingAPI {
   }
 
   static async getUserProfile(userId: string): Promise<UserProfile | null> {
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching user profile:', error);
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Error in getUserProfile:', error);
       return null;
     }
-
-    return data;
   }
 
   static async updateUserProfile(profile: Partial<UserProfile>): Promise<void> {
-    const { error } = await supabase
-      .from('user_profiles')
-      .upsert(profile);
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert(profile)
+        .select()
+        .single();
 
-    if (error) {
+      if (error) {
+        throw error;
+      }
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
       throw error;
     }
   }

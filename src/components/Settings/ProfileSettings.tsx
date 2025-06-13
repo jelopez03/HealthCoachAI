@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, Save, Mail, Calendar, Ruler, Weight, Activity, Target, Utensils, AlertTriangle, Check, X } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import type { UserProfile } from '../../types';
 
 const HEALTH_GOALS = [
@@ -37,53 +38,74 @@ const COMMON_ALLERGIES = [
   'Sesame'
 ];
 
-// Mock profile data for demo
-const mockProfile: UserProfile = {
-  id: 'demo-profile-id',
-  user_id: 'demo-user-id',
-  name: 'Demo User',
-  age: 30,
-  gender: 'other',
-  height: 175,
-  weight: 70,
-  activity_level: 'moderate',
-  health_goals: ['Weight Loss', 'Improved Energy'],
-  dietary_restrictions: ['Vegetarian'],
-  allergies: [],
-  current_habits: 'I try to eat healthy but struggle with consistency.',
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString()
-};
-
 interface ProfileSettingsProps {
   onProfileComplete?: () => void;
 }
 
 export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileComplete }) => {
+  const { user, profile, updateProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [heightError, setHeightError] = useState('');
+  const [initialLoad, setInitialLoad] = useState(true);
   
-  // Convert height from cm to feet/inches for display
-  const totalInches = Math.round(mockProfile.height * 0.393701);
-  const feet = Math.floor(totalInches / 12);
-  const inches = totalInches % 12;
-
   const [formData, setFormData] = useState({
-    name: mockProfile.name,
-    email: 'demo@healthcoach.ai',
-    age: mockProfile.age.toString(),
-    gender: mockProfile.gender,
-    height_feet: feet.toString(),
-    height_inches: inches.toString(),
-    weight: mockProfile.weight.toString(),
-    activity_level: mockProfile.activity_level,
-    health_goals: mockProfile.health_goals,
-    dietary_restrictions: mockProfile.dietary_restrictions,
-    allergies: mockProfile.allergies,
-    current_habits: mockProfile.current_habits
+    name: '',
+    email: '',
+    age: '',
+    gender: 'other',
+    height_feet: '',
+    height_inches: '',
+    weight: '',
+    activity_level: 'moderate',
+    health_goals: [] as string[],
+    dietary_restrictions: [] as string[],
+    allergies: [] as string[],
+    current_habits: ''
   });
+
+  // Load existing profile data when component mounts
+  useEffect(() => {
+    if (profile && initialLoad) {
+      // Convert height from cm to feet/inches if needed
+      let feet = '';
+      let inches = '';
+      
+      if (profile.height_feet && profile.height_inches) {
+        feet = profile.height_feet.toString();
+        inches = profile.height_inches.toString();
+      } else if (profile.height) {
+        // Convert from cm to feet/inches
+        const totalInches = Math.round(profile.height * 0.393701);
+        feet = Math.floor(totalInches / 12).toString();
+        inches = (totalInches % 12).toString();
+      }
+
+      setFormData({
+        name: profile.name || '',
+        email: profile.email || user?.email || '',
+        age: profile.age ? profile.age.toString() : '',
+        gender: profile.gender || 'other',
+        height_feet: feet,
+        height_inches: inches,
+        weight: profile.weight ? profile.weight.toString() : '',
+        activity_level: profile.activity_level || 'moderate',
+        health_goals: profile.health_goals || [],
+        dietary_restrictions: profile.dietary_restrictions || [],
+        allergies: profile.allergies || [],
+        current_habits: profile.current_habits || ''
+      });
+      setInitialLoad(false);
+    } else if (!profile && user && initialLoad) {
+      // New user, set email from auth
+      setFormData(prev => ({
+        ...prev,
+        email: user.email
+      }));
+      setInitialLoad(false);
+    }
+  }, [profile, user, initialLoad]);
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -160,8 +182,27 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
     }
 
     try {
-      // Simulate API call for demo
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Prepare profile data for database
+      const profileData: Partial<UserProfile> = {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        age: parseInt(formData.age) || 0,
+        gender: formData.gender as 'male' | 'female' | 'other',
+        height_feet: parseInt(formData.height_feet) || 0,
+        height_inches: parseInt(formData.height_inches) || 0,
+        // Also store total height in cm for backward compatibility
+        height: Math.round(((parseInt(formData.height_feet) || 0) * 12 + (parseInt(formData.height_inches) || 0)) * 2.54),
+        weight: parseInt(formData.weight) || 0,
+        activity_level: formData.activity_level as UserProfile['activity_level'],
+        health_goals: formData.health_goals,
+        dietary_restrictions: formData.dietary_restrictions,
+        allergies: formData.allergies,
+        current_habits: formData.current_habits.trim()
+      };
+
+      // Update profile using the auth context
+      await updateProfile(profileData);
+      
       setSuccess(true);
       
       // Mark profile as complete if all required fields are filled
@@ -172,6 +213,8 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
+      // Show error to user
+      setEmailError('Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -552,7 +595,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileCompl
                   {isProfileComplete() ? 'Save Changes' : 'Complete Profile'}
                 </>
               )}
-            </motion.button>
+            </button>
           </div>
         </form>
       </motion.div>
