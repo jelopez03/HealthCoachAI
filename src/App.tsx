@@ -128,12 +128,19 @@ const App: React.FC = () => {
           {/* Header with Bolt Badge */}
           <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-end">
             <div className="flex items-center">
-              <img 
-                src="/black_circle_360x360.png" 
-                alt="Powered by Bolt" 
-                className="w-12 h-12 opacity-80 hover:opacity-100 transition-opacity cursor-pointer"
-                title="Powered by Bolt"
-              />
+              <a 
+                href="https://bolt.new/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <img 
+                  src="/black_circle_360x360.png" 
+                  alt="Powered by Bolt" 
+                  className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
+                  title="Powered by Bolt - Click to visit bolt.new"
+                />
+              </a>
             </div>
           </div>
           
