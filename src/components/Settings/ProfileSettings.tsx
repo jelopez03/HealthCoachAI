@@ -741,7 +741,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   {isProfileComplete() ? 'Save Changes' : 'Complete Profile'}
                 </>
               )}
-            </button>
+            </motion.button>
           </div>
         </form>
       </motion.div>
