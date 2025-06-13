@@ -72,27 +72,6 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
     current_habits: ''
   });
 
-  // Check for success message from URL params or localStorage
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const successParam = urlParams.get('success');
-    const savedSuccess = localStorage.getItem('profile-update-success');
-    
-    if (successParam === 'true' || savedSuccess === 'true') {
-      setShowSuccessMessage(true);
-      localStorage.removeItem('profile-update-success');
-      
-      // Clear URL params
-      if (successParam) {
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }
-      
-      // Auto-hide after 5 seconds
-      setTimeout(() => setShowSuccessMessage(false), 5000);
-    }
-  }, []);
-
   // Load existing profile data when component mounts
   useEffect(() => {
     if (existingProfile && initialLoad) {
@@ -312,20 +291,16 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
       setSuccess(true);
       setShowSuccessMessage(true);
       
-      // Store success state for page refresh
-      localStorage.setItem('profile-update-success', 'true');
-      
-      // Check if profile is complete and call appropriate callback
-      if (isProfileComplete()) {
-        if (onProfileComplete) {
-          onProfileComplete(fullProfileData);
-        }
+      // Call callbacks but DON'T redirect - stay on the profile page
+      if (isProfileComplete() && onProfileComplete) {
+        onProfileComplete(fullProfileData);
       }
       
       if (onProfileUpdate) {
         onProfileUpdate(fullProfileData);
       }
       
+      // Auto-hide success message after 5 seconds
       setTimeout(() => {
         setSuccess(false);
         setShowSuccessMessage(false);
