@@ -110,7 +110,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
           .from('user_profiles')
           .select('*')
           .eq('email', 'user@healthcoach.ai')
-          .single();
+          .maybeSingle();
 
         if (data && !error) {
           setFormData({
@@ -242,7 +242,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
             .from('user_profiles')
             .select('*')
             .eq('email', profileData.email)
-            .single();
+            .maybeSingle();
 
           let result;
           if (existingData && !findError) {
