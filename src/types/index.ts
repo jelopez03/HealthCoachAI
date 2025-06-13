@@ -102,6 +102,20 @@ export interface ChatResponse {
 // Exercise and Habits Types
 export interface Workout {
   id: string;
+  user_id: string;
+  name: string;
+  type: 'cardio' | 'strength' | 'flexibility' | 'sports';
+  default_duration: number;
+  estimated_calories: number;
+  icon: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WorkoutSession {
+  id: string;
+  user_id: string;
+  workout_id?: string;
   name: string;
   type: 'cardio' | 'strength' | 'flexibility' | 'sports';
   duration: number; // in minutes
@@ -113,6 +127,31 @@ export interface Workout {
   weight?: number; // in lbs
   distance?: number; // in miles
   notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Habit {
+  id: string;
+  user_id: string;
+  name: string;
+  icon: string;
+  target: number;
+  unit: string;
+  color: string;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface HabitEntry {
+  id: string;
+  user_id: string;
+  habit_id: string;
+  date: string;
+  value: number;
+  completed: boolean;
+  created_at: string;
 }
 
 export interface HabitTracker {
@@ -126,12 +165,6 @@ export interface HabitTracker {
   unit: string;
   currentValue: number;
   history: HabitEntry[];
-}
-
-export interface HabitEntry {
-  date: string;
-  value: number;
-  completed: boolean;
 }
 
 export interface ExerciseSession {
@@ -148,14 +181,18 @@ export interface ExerciseSession {
 
 // Analytics Types
 export interface ProgressData {
+  id: string;
+  user_id: string;
   date: string;
-  weight: number;
-  calories: number;
-  water: number;
-  steps: number;
-  workouts: number;
+  weight?: number;
+  calories?: number;
+  water?: number;
+  steps?: number;
   sleep_hours?: number;
   mood?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface WeeklyStats {
@@ -169,9 +206,102 @@ export interface WeeklyStats {
 
 export interface Achievement {
   id: string;
+  user_id: string;
   title: string;
   description: string;
   icon: string;
-  date_earned: string;
   category: 'workout' | 'habit' | 'weight' | 'streak' | 'milestone';
+  date_earned: string;
+  created_at: string;
+}
+
+// Grocery List Types
+export interface GroceryList {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  is_favorite: boolean;
+  total_items: number;
+  completed_items: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroceryItem {
+  id: string;
+  grocery_list_id: string;
+  name: string;
+  category: string;
+  quantity: string;
+  checked: boolean;
+  from_meal_plan: boolean;
+  created_at: string;
+}
+
+// Weekly Report Types
+export interface WeeklyReport {
+  id: string;
+  user_id: string;
+  week_start: string;
+  week_end: string;
+  calories_goal?: number;
+  calories_actual?: number;
+  meals_logged?: number;
+  meals_goal?: number;
+  exercise_days?: number;
+  exercise_goal?: number;
+  weight_change?: number;
+  achievements: string[];
+  insights: string[];
+  created_at: string;
+}
+
+// User Preferences Types
+export interface UserPreferences {
+  id: string;
+  user_id: string;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    mealReminders: boolean;
+    progressUpdates: boolean;
+    weeklyReports: boolean;
+  };
+  appearance: {
+    theme: 'light' | 'dark' | 'auto';
+    colorScheme: 'blue' | 'green' | 'purple' | 'orange';
+    fontSize: 'small' | 'medium' | 'large';
+  };
+  privacy: {
+    dataSharing: boolean;
+    analytics: boolean;
+    personalizedAds: boolean;
+  };
+  coaching: {
+    reminderFrequency: 'daily' | 'weekly' | 'monthly';
+    coachingStyle: 'gentle' | 'motivational' | 'direct';
+    language: 'en' | 'es' | 'fr' | 'de';
+  };
+  audio: {
+    soundEffects: boolean;
+    voiceGuidance: boolean;
+    volume: number;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+// Onboarding Types
+export interface OnboardingProgress {
+  id: string;
+  user_id: string;
+  profile_completed: boolean;
+  first_conversation: boolean;
+  first_workout: boolean;
+  first_habit: boolean;
+  preferences_set: boolean;
+  walkthrough_completed: boolean;
+  created_at: string;
+  updated_at: string;
 }

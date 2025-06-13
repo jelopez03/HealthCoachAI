@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { Sidebar } from './components/Layout/Sidebar';
@@ -11,6 +11,7 @@ import { ExerciseTracker } from './components/Exercise/ExerciseTracker';
 import { PhotoAnalysis } from './components/AI/PhotoAnalysis';
 import { SmartGroceryList } from './components/AI/SmartGroceryList';
 import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
+import { WalkthroughModal } from './components/Onboarding/WalkthroughModal';
 import type { Conversation } from './types';
 
 // Mock user data for public demo
@@ -42,11 +43,33 @@ const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list'>('chat');
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
+  const [showWalkthrough, setShowWalkthrough] = useState(false);
+  const [profileCompleted, setProfileCompleted] = useState(false);
+
+  // Check if this is the user's first visit
+  useEffect(() => {
+    const hasVisited = localStorage.getItem('healthcoach-visited');
+    const profileComplete = localStorage.getItem('healthcoach-profile-complete');
+    
+    if (!hasVisited) {
+      setShowWalkthrough(true);
+      localStorage.setItem('healthcoach-visited', 'true');
+    }
+    
+    if (profileComplete === 'true') {
+      setProfileCompleted(true);
+    }
+  }, []);
 
   const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list') => {
     setCurrentPage(page);
     if (page !== 'chat') {
       setCurrentConversation(null);
+    }
+    
+    // Close walkthrough when navigating
+    if (showWalkthrough) {
+      setShowWalkthrough(false);
     }
   };
 
@@ -55,10 +78,15 @@ const App: React.FC = () => {
     setShowPremiumUpgrade(false);
   };
 
+  const handleProfileComplete = () => {
+    setProfileCompleted(true);
+    localStorage.setItem('healthcoach-profile-complete', 'true');
+  };
+
   const renderMainContent = () => {
     switch (currentPage) {
       case 'profile':
-        return <ProfileSettings />;
+        return <ProfileSettings onProfileComplete={handleProfileComplete} />;
       case 'preferences':
         return <Preferences />;
       case 'reports':
@@ -105,6 +133,28 @@ const App: React.FC = () => {
                     All features are available for testing and exploration.
                   </p>
                 </div>
+                {!profileCompleted && (
+                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                    <p className="text-sm text-amber-800">
+                      <strong>⚠️ Complete Your Profile:</strong> For the best experience, please{' '}
+                      <button 
+                        onClick={() => handleNavigate('profile')}
+                        className="underline font-medium hover:text-amber-900"
+                      >
+                        complete your profile
+                      </button>{' '}
+                      first to get personalized recommendations.
+                    </p>
+                  </div>
+                )}
+                <div className="text-center">
+                  <button
+                    onClick={() => setShowWalkthrough(true)}
+                    className="text-sky-600 hover:text-sky-700 text-sm font-medium underline"
+                  >
+                    Take the guided tour
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -124,6 +174,7 @@ const App: React.FC = () => {
             currentPage={currentPage}
             user={mockUser}
             profile={mockProfile}
+            profileCompleted={profileCompleted}
           />
           
           <div className="flex-1 flex flex-col">
@@ -159,6 +210,14 @@ const App: React.FC = () => {
             onUpgrade={handleUpgrade}
           />
         )}
+
+        {/* Walkthrough Modal */}
+        <WalkthroughModal
+          isOpen={showWalkthrough}
+          onClose={() => setShowWalkthrough(false)}
+          onNavigate={handleNavigate}
+          profileCompleted={profileCompleted}
+        />
       </Router>
     </AuthProvider>
   );

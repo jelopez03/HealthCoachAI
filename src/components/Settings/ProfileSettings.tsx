@@ -59,7 +59,11 @@ const mockUser = {
   email: 'demo@healthcoach.ai'
 };
 
-export const ProfileSettings: React.FC = () => {
+interface ProfileSettingsProps {
+  onProfileComplete?: () => void;
+}
+
+export const ProfileSettings: React.FC<ProfileSettingsProps> = ({ onProfileComplete }) => {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -83,6 +87,14 @@ export const ProfileSettings: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: newArray }));
   };
 
+  const isProfileComplete = () => {
+    return formData.name.trim() !== '' &&
+           formData.age !== '' &&
+           formData.height !== '' &&
+           formData.weight !== '' &&
+           formData.health_goals.length > 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -92,6 +104,12 @@ export const ProfileSettings: React.FC = () => {
       // Simulate API call for demo
       await new Promise(resolve => setTimeout(resolve, 1000));
       setSuccess(true);
+      
+      // Mark profile as complete if all required fields are filled
+      if (isProfileComplete() && onProfileComplete) {
+        onProfileComplete();
+      }
+      
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -120,6 +138,18 @@ export const ProfileSettings: React.FC = () => {
           </div>
         </div>
 
+        {/* Profile Completion Notice */}
+        {!isProfileComplete() && (
+          <div className="bg-amber-50 border-l-4 border-amber-400 p-4 m-6 rounded-lg">
+            <div className="flex items-center">
+              <AlertTriangle className="w-5 h-5 text-amber-400 mr-2" />
+              <p className="text-amber-700 font-medium">
+                Please complete all required fields to get personalized recommendations.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Success Message */}
         {success && (
           <motion.div
@@ -129,7 +159,9 @@ export const ProfileSettings: React.FC = () => {
           >
             <div className="flex items-center">
               <Save className="w-5 h-5 text-green-400 mr-2" />
-              <p className="text-green-700 font-medium">Profile updated successfully!</p>
+              <p className="text-green-700 font-medium">
+                Profile updated successfully! {isProfileComplete() && 'Your profile is now complete.'}
+              </p>
             </div>
           </motion.div>
         )}
@@ -144,13 +176,16 @@ export const ProfileSettings: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                   className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                   placeholder="Enter your full name"
+                  required
                 />
               </div>
 
@@ -168,7 +203,9 @@ export const ProfileSettings: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Age <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -177,6 +214,9 @@ export const ProfileSettings: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, age: e.target.value }))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     placeholder="Age"
+                    min="13"
+                    max="120"
+                    required
                   />
                 </div>
               </div>
@@ -195,7 +235,9 @@ export const ProfileSettings: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Height (inches)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Height (inches) <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -204,12 +246,17 @@ export const ProfileSettings: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, height: e.target.value }))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     placeholder="67"
+                    min="36"
+                    max="96"
+                    required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Weight (lbs)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weight (lbs) <span className="text-red-500">*</span>
+                </label>
                 <div className="relative">
                   <Weight className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
@@ -218,6 +265,9 @@ export const ProfileSettings: React.FC = () => {
                     onChange={(e) => setFormData(prev => ({ ...prev, weight: e.target.value }))}
                     className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent"
                     placeholder="154"
+                    min="50"
+                    max="500"
+                    required
                   />
                 </div>
               </div>
@@ -266,7 +316,7 @@ export const ProfileSettings: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
               <Target className="w-5 h-5 mr-2 text-sky-500" />
-              Health Goals
+              Health Goals <span className="text-red-500 text-sm">*</span>
             </h2>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -285,6 +335,9 @@ export const ProfileSettings: React.FC = () => {
                 </button>
               ))}
             </div>
+            {formData.health_goals.length === 0 && (
+              <p className="text-sm text-red-500 mt-2">Please select at least one health goal.</p>
+            )}
           </div>
 
           {/* Dietary Preferences */}
@@ -359,7 +412,11 @@ export const ProfileSettings: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading}
-              className="flex items-center px-8 py-3 bg-gradient-to-r from-sky-500 to-emerald-500 text-white rounded-lg hover:from-sky-600 hover:to-emerald-600 transition-all disabled:opacity-50"
+              className={`flex items-center px-8 py-3 rounded-lg font-medium transition-all disabled:opacity-50 ${
+                isProfileComplete()
+                  ? 'bg-gradient-to-r from-sky-500 to-emerald-500 text-white hover:from-sky-600 hover:to-emerald-600'
+                  : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'
+              }`}
             >
               {loading ? (
                 <>
@@ -369,7 +426,7 @@ export const ProfileSettings: React.FC = () => {
               ) : (
                 <>
                   <Save className="w-5 h-5 mr-2" />
-                  Save Changes
+                  {isProfileComplete() ? 'Save Changes' : 'Complete Profile'}
                 </>
               )}
             </motion.button>

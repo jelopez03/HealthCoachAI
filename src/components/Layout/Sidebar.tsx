@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3 } from 'lucide-react';
+import { MessageSquare, Plus, Settings, Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle } from 'lucide-react';
 import { PremiumUpgrade } from '../Premium/PremiumUpgrade';
 import type { Conversation, User as UserType, UserProfile } from '../../types';
 
@@ -12,6 +12,7 @@ interface SidebarProps {
   currentPage?: string;
   user: UserType;
   profile: UserProfile;
+  profileCompleted?: boolean;
 }
 
 // Helper function to generate valid UUIDs for mock data
@@ -30,7 +31,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNavigate,
   currentPage = 'chat',
   user,
-  profile
+  profile,
+  profileCompleted = false
 }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,6 +117,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
+          {/* Profile Completion Alert */}
+          {!profileCompleted && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-amber-600" />
+                <span className="text-sm font-medium text-amber-800">Complete Your Profile</span>
+              </div>
+              <p className="text-xs text-amber-700 mb-2">
+                Get personalized recommendations by completing your profile first.
+              </p>
+              <button
+                onClick={() => onNavigate?.('profile')}
+                className="text-xs bg-amber-500 text-white px-3 py-1 rounded-md hover:bg-amber-600 transition-colors"
+              >
+                Complete Now
+              </button>
+            </div>
+          )}
+
           {/* Demo User Info */}
           <div className="bg-gradient-to-r from-emerald-50 to-sky-50 p-3 rounded-lg mb-4 border border-emerald-200">
             <div className="flex items-center space-x-2 mb-1">
@@ -142,6 +163,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex items-center space-x-3">
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.label}</span>
+                  {item.id === 'profile' && !profileCompleted && (
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  )}
                 </div>
                 <ChevronRight className="w-4 h-4" />
               </button>
