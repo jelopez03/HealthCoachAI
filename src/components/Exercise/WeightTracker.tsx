@@ -397,16 +397,6 @@ export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
     setTimeout(() => setSuccess(''), 3000);
   };
 
-  const exportData = () => {
-    const dataStr = JSON.stringify(entries, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'weight-data.json';
-    link.click();
-  };
-
   const stats = getStats();
 
   const WeightChart = () => {
@@ -1020,7 +1010,7 @@ export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
 
       {/* Actions and History */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
+        {/* Quick Actions - Export Data Button Removed */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1043,14 +1033,6 @@ export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
             >
               <Target className="w-5 h-5" />
               <span>Set Goal</span>
-            </button>
-            
-            <button
-              onClick={exportData}
-              className="w-full flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Save className="w-5 h-5" />
-              <span>Export Data</span>
             </button>
           </div>
         </motion.div>
