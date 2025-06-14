@@ -187,10 +187,42 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
   };
 
   const quickPrompts = [
-    { icon: <Utensils className="w-4 h-4" />, text: "Create a meal plan for me", color: "emerald" },
-    { icon: <Target className="w-4 h-4" />, text: "Help me lose weight", color: "blue" },
-    { icon: <Brain className="w-4 h-4" />, text: "Suggest healthy recipes", color: "purple" },
-    { icon: <Sparkles className="w-4 h-4" />, text: "Improve my energy levels", color: "orange" }
+    { 
+      icon: <Utensils className="w-4 h-4" />, 
+      text: "Create a meal plan for me", 
+      borderColor: "border-emerald-200",
+      bgColor: "bg-emerald-50",
+      hoverBgColor: "hover:bg-emerald-100",
+      iconColor: "text-emerald-600",
+      textColor: "text-emerald-800"
+    },
+    { 
+      icon: <Target className="w-4 h-4" />, 
+      text: "Help me lose weight", 
+      borderColor: "border-blue-200",
+      bgColor: "bg-blue-50",
+      hoverBgColor: "hover:bg-blue-100",
+      iconColor: "text-blue-600",
+      textColor: "text-blue-800"
+    },
+    { 
+      icon: <Brain className="w-4 h-4" />, 
+      text: "Suggest healthy recipes", 
+      borderColor: "border-purple-200",
+      bgColor: "bg-purple-50",
+      hoverBgColor: "hover:bg-purple-100",
+      iconColor: "text-purple-600",
+      textColor: "text-purple-800"
+    },
+    { 
+      icon: <Sparkles className="w-4 h-4" />, 
+      text: "Improve my energy levels", 
+      borderColor: "border-orange-200",
+      bgColor: "bg-orange-50",
+      hoverBgColor: "hover:bg-orange-100",
+      iconColor: "text-orange-600",
+      textColor: "text-orange-800"
+    }
   ];
 
   return (
@@ -331,13 +363,13 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                     onClick={() => setInputMessage(prompt.text)}
-                    className={`p-3 rounded-lg border-2 border-${prompt.color}-200 bg-${prompt.color}-50 hover:bg-${prompt.color}-100 transition-all text-left group`}
+                    className={`p-3 rounded-lg border-2 ${prompt.borderColor} ${prompt.bgColor} ${prompt.hoverBgColor} transition-all text-left group`}
                   >
                     <div className="flex items-center space-x-2">
-                      <div className={`text-${prompt.color}-600 group-hover:scale-110 transition-transform`}>
+                      <div className={`${prompt.iconColor} group-hover:scale-110 transition-transform`}>
                         {prompt.icon}
                       </div>
-                      <span className={`text-sm font-medium text-${prompt.color}-800`}>
+                      <span className={`text-sm font-medium ${prompt.textColor}`}>
                         {prompt.text}
                       </span>
                     </div>
@@ -423,7 +455,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               ) : (
                 <Send className="w-5 h-5" />
               )}
-            </button>
+            </motion.button>
           </form>
         </div>
       </div>
