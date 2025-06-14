@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Weight, Plus, Calendar, TrendingUp, TrendingDown, Target, Edit3, Trash2, Save, X, Calculator, Bell } from 'lucide-react';
+import { Weight, Plus, Calendar, TrendingUp, TrendingDown, Target, Edit3, Trash2, Save, X, Calculator, Bell, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase';
 
 interface WeightEntry {
   id: string;
+  user_id: string;
   weight: number;
   unit: 'kg' | 'lbs';
   date: string;
@@ -34,6 +36,9 @@ export const WeightTracker: React.FC = () => {
   const [editingEntry, setEditingEntry] = useState<WeightEntry | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<'1M' | '3M' | '6M' | '1Y'>('3M');
   const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   
   const [newEntry, setNewEntry] = useState({
     weight: '',
@@ -47,10 +52,80 @@ export const WeightTracker: React.FC = () => {
     deadline: ''
   });
 
+  const [goalForm, setGoalForm] = useState({
+    target: '',
+    deadline: ''
+  });
+
   const [userHeight, setUserHeight] = useState({ feet: 5, inches: 8 }); // Default height for BMI
 
-  // Load data from localStorage on mount
+  const userId = 'open-access-user'; // For demo purposes
+
+  // Load data from database or localStorage on mount
   useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        // Load from database
+        await loadFromDatabase();
+      } else {
+        // Load from localStorage
+        loadFromLocalStorage();
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      loadFromLocalStorage(); // Fallback to localStorage
+    }
+  };
+
+  const loadFromDatabase = async () => {
+    try {
+      // Load weight entries
+      const { data: entriesData, error: entriesError } = await supabase
+        .from('progress_data')
+        .select('*')
+        .eq('user_id', userId)
+        .not('weight', 'is', null)
+        .order('date', { ascending: false });
+
+      if (entriesError) throw entriesError;
+
+      if (entriesData) {
+        const weightEntries: WeightEntry[] = entriesData.map(entry => ({
+          id: entry.id,
+          user_id: entry.user_id,
+          weight: entry.weight,
+          unit: 'lbs', // Default unit, could be stored in user preferences
+          date: entry.date,
+          notes: entry.notes || '',
+          created_at: entry.created_at
+        }));
+        setEntries(weightEntries);
+      }
+
+      // Load user preferences for height and goal
+      const { data: profileData } = await supabase
+        .from('user_profiles')
+        .select('height_feet, height_inches')
+        .eq('user_id', userId)
+        .single();
+
+      if (profileData) {
+        setUserHeight({
+          feet: profileData.height_feet || 5,
+          inches: profileData.height_inches || 8
+        });
+      }
+    } catch (error) {
+      console.error('Database load error:', error);
+      loadFromLocalStorage();
+    }
+  };
+
+  const loadFromLocalStorage = () => {
     const savedEntries = localStorage.getItem('weight-entries');
     const savedGoal = localStorage.getItem('weight-goal');
     const savedUnit = localStorage.getItem('weight-unit');
@@ -61,11 +136,11 @@ export const WeightTracker: React.FC = () => {
     } else {
       // Add some mock data for demonstration
       const mockEntries: WeightEntry[] = [
-        { id: '1', weight: 165, unit: 'lbs', date: '2024-03-01', created_at: '2024-03-01T10:00:00Z' },
-        { id: '2', weight: 163, unit: 'lbs', date: '2024-03-08', created_at: '2024-03-08T10:00:00Z' },
-        { id: '3', weight: 161, unit: 'lbs', date: '2024-03-15', created_at: '2024-03-15T10:00:00Z' },
-        { id: '4', weight: 159, unit: 'lbs', date: '2024-03-22', created_at: '2024-03-22T10:00:00Z' },
-        { id: '5', weight: 157, unit: 'lbs', date: '2024-03-29', created_at: '2024-03-29T10:00:00Z' }
+        { id: '1', user_id: userId, weight: 165, unit: 'lbs', date: '2024-03-01', created_at: '2024-03-01T10:00:00Z' },
+        { id: '2', user_id: userId, weight: 163, unit: 'lbs', date: '2024-03-08', created_at: '2024-03-08T10:00:00Z' },
+        { id: '3', user_id: userId, weight: 161, unit: 'lbs', date: '2024-03-15', created_at: '2024-03-15T10:00:00Z' },
+        { id: '4', user_id: userId, weight: 159, unit: 'lbs', date: '2024-03-22', created_at: '2024-03-22T10:00:00Z' },
+        { id: '5', user_id: userId, weight: 157, unit: 'lbs', date: '2024-03-29', created_at: '2024-03-29T10:00:00Z' }
       ];
       setEntries(mockEntries);
       localStorage.setItem('weight-entries', JSON.stringify(mockEntries));
@@ -82,20 +157,31 @@ export const WeightTracker: React.FC = () => {
     if (savedHeight) {
       setUserHeight(JSON.parse(savedHeight));
     }
-  }, []);
+  };
 
-  // Save to localStorage whenever data changes
-  useEffect(() => {
-    localStorage.setItem('weight-entries', JSON.stringify(entries));
-  }, [entries]);
+  // Save to database and localStorage
+  const saveToDatabase = async (entry: Omit<WeightEntry, 'id' | 'created_at'>) => {
+    if (!isSupabaseConfigured()) return null;
 
-  useEffect(() => {
-    localStorage.setItem('weight-goal', JSON.stringify(goal));
-  }, [goal]);
+    try {
+      const { data, error } = await supabase
+        .from('progress_data')
+        .upsert({
+          user_id: entry.user_id,
+          date: entry.date,
+          weight: entry.weight,
+          notes: entry.notes
+        }, { onConflict: 'user_id,date' })
+        .select()
+        .single();
 
-  useEffect(() => {
-    localStorage.setItem('weight-unit', unit);
-  }, [unit]);
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Database save error:', error);
+      throw error;
+    }
+  };
 
   const convertWeight = (weight: number, fromUnit: 'kg' | 'lbs', toUnit: 'kg' | 'lbs'): number => {
     if (fromUnit === toUnit) return weight;
@@ -158,40 +244,155 @@ export const WeightTracker: React.FC = () => {
     };
   };
 
-  const addEntry = () => {
-    if (!newEntry.weight || !newEntry.date) return;
-
-    const entry: WeightEntry = {
-      id: Date.now().toString(),
-      weight: parseFloat(newEntry.weight),
-      unit,
-      date: newEntry.date,
-      notes: newEntry.notes,
-      created_at: new Date().toISOString()
-    };
-
-    setEntries(prev => [...prev, entry].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
-    setShowAddModal(false);
+  const validateWeightInput = (weight: string): boolean => {
+    const weightNum = parseFloat(weight);
+    if (isNaN(weightNum) || weightNum <= 0) {
+      setError('Please enter a valid weight greater than 0');
+      return false;
+    }
+    if (unit === 'lbs' && (weightNum < 50 || weightNum > 1000)) {
+      setError('Weight must be between 50 and 1000 lbs');
+      return false;
+    }
+    if (unit === 'kg' && (weightNum < 20 || weightNum > 500)) {
+      setError('Weight must be between 20 and 500 kg');
+      return false;
+    }
+    return true;
   };
 
-  const updateEntry = () => {
-    if (!editingEntry || !newEntry.weight || !newEntry.date) return;
+  const addEntry = async () => {
+    if (!newEntry.weight || !newEntry.date) {
+      setError('Please fill in all required fields');
+      return;
+    }
 
-    const updatedEntry: WeightEntry = {
-      ...editingEntry,
-      weight: parseFloat(newEntry.weight),
-      date: newEntry.date,
-      notes: newEntry.notes
-    };
+    if (!validateWeightInput(newEntry.weight)) return;
 
-    setEntries(prev => prev.map(entry => entry.id === editingEntry.id ? updatedEntry : entry));
-    setEditingEntry(null);
-    setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
+    setLoading(true);
+    setError('');
+
+    try {
+      const entryData = {
+        user_id: userId,
+        weight: parseFloat(newEntry.weight),
+        unit,
+        date: newEntry.date,
+        notes: newEntry.notes
+      };
+
+      // Save to database if configured
+      if (isSupabaseConfigured()) {
+        await saveToDatabase(entryData);
+      }
+
+      // Create entry for local state
+      const entry: WeightEntry = {
+        id: Date.now().toString(),
+        ...entryData,
+        created_at: new Date().toISOString()
+      };
+
+      setEntries(prev => {
+        const updated = [...prev, entry].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        localStorage.setItem('weight-entries', JSON.stringify(updated));
+        return updated;
+      });
+
+      setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
+      setShowAddModal(false);
+      setSuccess('Weight entry saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error saving entry:', error);
+      setError('Failed to save weight entry. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateEntry = async () => {
+    if (!editingEntry || !newEntry.weight || !newEntry.date) {
+      setError('Please fill in all required fields');
+      return;
+    }
+
+    if (!validateWeightInput(newEntry.weight)) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const updatedEntry: WeightEntry = {
+        ...editingEntry,
+        weight: parseFloat(newEntry.weight),
+        date: newEntry.date,
+        notes: newEntry.notes
+      };
+
+      // Update in database if configured
+      if (isSupabaseConfigured()) {
+        await saveToDatabase({
+          user_id: updatedEntry.user_id,
+          weight: updatedEntry.weight,
+          unit: updatedEntry.unit,
+          date: updatedEntry.date,
+          notes: updatedEntry.notes
+        });
+      }
+
+      setEntries(prev => {
+        const updated = prev.map(entry => entry.id === editingEntry.id ? updatedEntry : entry);
+        localStorage.setItem('weight-entries', JSON.stringify(updated));
+        return updated;
+      });
+
+      setEditingEntry(null);
+      setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
+      setSuccess('Weight entry updated successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      setError('Failed to update weight entry. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const deleteEntry = (id: string) => {
-    setEntries(prev => prev.filter(entry => entry.id !== id));
+    setEntries(prev => {
+      const updated = prev.filter(entry => entry.id !== id);
+      localStorage.setItem('weight-entries', JSON.stringify(updated));
+      return updated;
+    });
+    setSuccess('Weight entry deleted successfully!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  const saveGoal = () => {
+    if (!goalForm.target) {
+      setError('Please enter a target weight');
+      return;
+    }
+
+    const targetWeight = parseFloat(goalForm.target);
+    if (isNaN(targetWeight) || targetWeight <= 0) {
+      setError('Please enter a valid target weight');
+      return;
+    }
+
+    const newGoal: WeightGoal = {
+      target: targetWeight,
+      unit,
+      deadline: goalForm.deadline
+    };
+
+    setGoal(newGoal);
+    localStorage.setItem('weight-goal', JSON.stringify(newGoal));
+    setGoalForm({ target: '', deadline: '' });
+    setShowGoalModal(false);
+    setSuccess('Weight goal set successfully!');
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   const exportData = () => {
@@ -305,211 +506,400 @@ export const WeightTracker: React.FC = () => {
   };
 
   const AddEditModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl p-6 max-w-md w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-800">
-            {editingEntry ? 'Edit Weight Entry' : 'Add Weight Entry'}
-          </h3>
-          <button
-            onClick={() => {
-              setShowAddModal(false);
-              setEditingEntry(null);
-              setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
-            }}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl p-6 max-w-md w-full"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-800">
+              {editingEntry ? 'Edit Weight Entry' : 'Add Weight Entry'}
+            </h3>
+            <button
+              onClick={() => {
+                setShowAddModal(false);
+                setEditingEntry(null);
+                setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
+                setError('');
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
 
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Weight</label>
-            <div className="flex space-x-2">
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 flex items-center"
+            >
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <span className="text-sm">{error}</span>
+            </motion.div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Weight *</label>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  value={newEntry.weight}
+                  onChange={(e) => {
+                    setNewEntry(prev => ({ ...prev, weight: e.target.value }));
+                    setError('');
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="Enter weight"
+                  disabled={loading}
+                />
+                <select
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value as 'kg' | 'lbs')}
+                  className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  disabled={loading}
+                >
+                  <option value="lbs">lbs</option>
+                  <option value="kg">kg</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date *</label>
               <input
-                type="number"
-                step="0.1"
-                value={newEntry.weight}
-                onChange={(e) => setNewEntry(prev => ({ ...prev, weight: e.target.value }))}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter weight"
+                type="date"
+                value={newEntry.date}
+                onChange={(e) => {
+                  setNewEntry(prev => ({ ...prev, date: e.target.value }));
+                  setError('');
+                }}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                disabled={loading}
               />
-              <select
-                value={unit}
-                onChange={(e) => setUnit(e.target.value as 'kg' | 'lbs')}
-                className="px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="lbs">lbs</option>
-                <option value="kg">kg</option>
-              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
+              <textarea
+                value={newEntry.notes}
+                onChange={(e) => setNewEntry(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Add any notes about this weigh-in..."
+                disabled={loading}
+              />
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Date</label>
-            <input
-              type="date"
-              value={newEntry.date}
-              onChange={(e) => setNewEntry(prev => ({ ...prev, date: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex items-center justify-end space-x-3 mt-6">
+            <button
+              onClick={() => {
+                setShowAddModal(false);
+                setEditingEntry(null);
+                setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
+                setError('');
+              }}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={editingEntry ? updateEntry : addEntry}
+              disabled={!newEntry.weight || !newEntry.date || loading}
+              className="flex items-center space-x-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>{editingEntry ? 'Update' : 'Save'}</span>
+                </>
+              )}
+            </button>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Notes (optional)</label>
-            <textarea
-              value={newEntry.notes}
-              onChange={(e) => setNewEntry(prev => ({ ...prev, notes: e.target.value }))}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Add any notes about this weigh-in..."
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-end space-x-3 mt-6">
-          <button
-            onClick={() => {
-              setShowAddModal(false);
-              setEditingEntry(null);
-              setNewEntry({ weight: '', date: new Date().toISOString().split('T')[0], notes: '' });
-            }}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={editingEntry ? updateEntry : addEntry}
-            disabled={!newEntry.weight || !newEntry.date}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-          >
-            <Save className="w-4 h-4" />
-            <span>{editingEntry ? 'Update' : 'Save'}</span>
-          </button>
-        </div>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
+  );
+
+  const GoalModal = () => (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl p-6 max-w-md w-full"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+              <Target className="w-5 h-5 mr-2 text-orange-500" />
+              Set Weight Goal
+            </h3>
+            <button
+              onClick={() => {
+                setShowGoalModal(false);
+                setGoalForm({ target: '', deadline: '' });
+                setError('');
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4 flex items-center"
+            >
+              <AlertCircle className="w-5 h-5 mr-2" />
+              <span className="text-sm">{error}</span>
+            </motion.div>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Target Weight *</label>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  step="0.1"
+                  value={goalForm.target}
+                  onChange={(e) => {
+                    setGoalForm(prev => ({ ...prev, target: e.target.value }));
+                    setError('');
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                  placeholder="Enter target weight"
+                />
+                <span className="flex items-center px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-gray-600">
+                  {unit}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Target Date (optional)</label>
+              <input
+                type="date"
+                value={goalForm.deadline}
+                onChange={(e) => setGoalForm(prev => ({ ...prev, deadline: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+
+            {stats.current > 0 && goalForm.target && (
+              <div className="p-4 bg-orange-50 rounded-lg">
+                <div className="text-sm text-orange-800">
+                  <strong>Goal Summary:</strong>
+                  <br />
+                  Current: {stats.current.toFixed(1)} {unit}
+                  <br />
+                  Target: {parseFloat(goalForm.target).toFixed(1)} {unit}
+                  <br />
+                  Difference: {Math.abs(stats.current - parseFloat(goalForm.target)).toFixed(1)} {unit} to {stats.current > parseFloat(goalForm.target) ? 'lose' : 'gain'}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-end space-x-3 mt-6">
+            <button
+              onClick={() => {
+                setShowGoalModal(false);
+                setGoalForm({ target: '', deadline: '' });
+                setError('');
+              }}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={saveGoal}
+              disabled={!goalForm.target}
+              className="flex items-center space-x-2 px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Target className="w-4 h-4" />
+              <span>Set Goal</span>
+            </button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 
   const BMIModal = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl p-6 max-w-md w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-gray-800 flex items-center">
-            <Calculator className="w-5 h-5 mr-2 text-blue-500" />
-            BMI Calculator
-          </h3>
-          <button
-            onClick={() => setShowBMIModal(false)}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-
-        <div className="space-y-6">
-          <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
-            <div className="text-3xl font-bold text-blue-600 mb-2">
-              {stats.bmi.toFixed(1)}
-            </div>
-            <div className={`text-lg font-medium ${
-              stats.bmiCategory === 'Normal' ? 'text-green-600' :
-              stats.bmiCategory === 'Underweight' ? 'text-blue-600' :
-              stats.bmiCategory === 'Overweight' ? 'text-orange-600' : 'text-red-600'
-            }`}>
-              {stats.bmiCategory}
-            </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl p-6 max-w-md w-full"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+              <Calculator className="w-5 h-5 mr-2 text-blue-500" />
+              BMI Calculator
+            </h3>
+            <button
+              onClick={() => setShowBMIModal(false)}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-blue-600">Underweight</span>
-              <span className="text-green-600">Normal</span>
-              <span className="text-orange-600">Overweight</span>
-              <span className="text-red-600">Obese</span>
+          <div className="space-y-6">
+            <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+              <div className="text-3xl font-bold text-blue-600 mb-2">
+                {stats.bmi.toFixed(1)}
+              </div>
+              <div className={`text-lg font-medium ${
+                stats.bmiCategory === 'Normal' ? 'text-green-600' :
+                stats.bmiCategory === 'Underweight' ? 'text-blue-600' :
+                stats.bmiCategory === 'Overweight' ? 'text-orange-600' : 'text-red-600'
+              }`}>
+                {stats.bmiCategory}
+              </div>
             </div>
-            <div className="relative h-4 bg-gradient-to-r from-blue-400 via-green-400 via-orange-400 to-red-400 rounded-full">
-              <div
-                className="absolute w-3 h-3 bg-white border-2 border-gray-800 rounded-full top-0.5 transform -translate-x-1/2"
-                style={{ left: `${Math.min(Math.max((stats.bmi / 40) * 100, 2), 98)}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-gray-500">
-              <span>18.5</span>
-              <span>25</span>
-              <span>30</span>
-              <span>40</span>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <h4 className="font-medium text-gray-800">Height Settings</h4>
-            <div className="flex space-x-2">
-              <input
-                type="number"
-                value={userHeight.feet}
-                onChange={(e) => {
-                  const newHeight = { ...userHeight, feet: parseInt(e.target.value) || 0 };
-                  setUserHeight(newHeight);
-                  localStorage.setItem('user-height', JSON.stringify(newHeight));
-                }}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="5"
-                min="3"
-                max="8"
-              />
-              <span className="flex items-center text-gray-600">ft</span>
-              <input
-                type="number"
-                value={userHeight.inches}
-                onChange={(e) => {
-                  const newHeight = { ...userHeight, inches: parseInt(e.target.value) || 0 };
-                  setUserHeight(newHeight);
-                  localStorage.setItem('user-height', JSON.stringify(newHeight));
-                }}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="8"
-                min="0"
-                max="11"
-              />
-              <span className="flex items-center text-gray-600">in</span>
+            <div className="space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-blue-600">Underweight</span>
+                <span className="text-green-600">Normal</span>
+                <span className="text-orange-600">Overweight</span>
+                <span className="text-red-600">Obese</span>
+              </div>
+              <div className="relative h-4 bg-gradient-to-r from-blue-400 via-green-400 via-orange-400 to-red-400 rounded-full">
+                <div
+                  className="absolute w-3 h-3 bg-white border-2 border-gray-800 rounded-full top-0.5 transform -translate-x-1/2"
+                  style={{ left: `${Math.min(Math.max((stats.bmi / 40) * 100, 2), 98)}%` }}
+                />
+              </div>
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>18.5</span>
+                <span>25</span>
+                <span>30</span>
+                <span>40</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-medium text-gray-800">Height Settings</h4>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  value={userHeight.feet}
+                  onChange={(e) => {
+                    const newHeight = { ...userHeight, feet: parseInt(e.target.value) || 0 };
+                    setUserHeight(newHeight);
+                    localStorage.setItem('user-height', JSON.stringify(newHeight));
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="5"
+                  min="3"
+                  max="8"
+                />
+                <span className="flex items-center text-gray-600">ft</span>
+                <input
+                  type="number"
+                  value={userHeight.inches}
+                  onChange={(e) => {
+                    const newHeight = { ...userHeight, inches: parseInt(e.target.value) || 0 };
+                    setUserHeight(newHeight);
+                    localStorage.setItem('user-height', JSON.stringify(newHeight));
+                  }}
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  placeholder="8"
+                  min="0"
+                  max="11"
+                />
+                <span className="flex items-center text-gray-600">in</span>
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
   );
 
   return (
     <div className="space-y-6">
-      {/* Header with Current Weight */}
+      {/* Success/Error Messages */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.95 }}
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl shadow-2xl border border-green-400">
+              <div className="flex items-center space-x-3">
+                <CheckCircle className="w-6 h-6" />
+                <span className="font-medium">{success}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header with Current Weight - Reduced size by 25% */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-8 text-white"
+        className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white"
+        style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.33%' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Weight className="w-8 h-8" />
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <Weight className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-3xl font-bold">Weight Tracker</h2>
-              <p className="text-blue-100">Monitor your weight journey</p>
+              <h2 className="text-2xl font-bold">Weight Tracker</h2>
+              <p className="text-emerald-100">Monitor your weight journey</p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-4xl font-bold">{stats.current.toFixed(1)}</div>
-            <div className="text-blue-100">{unit}</div>
+            <div className="text-3xl font-bold">{stats.current.toFixed(1)}</div>
+            <div className="text-emerald-100">{unit}</div>
             {stats.weeklyChange !== 0 && (
               <div className={`flex items-center mt-2 ${stats.weeklyChange > 0 ? 'text-red-200' : 'text-green-200'}`}>
                 {stats.weeklyChange > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
@@ -726,10 +1116,9 @@ export const WeightTracker: React.FC = () => {
       </div>
 
       {/* Modals */}
-      <AnimatePresence>
-        {(showAddModal || editingEntry) && <AddEditModal />}
-        {showBMIModal && <BMIModal />}
-      </AnimatePresence>
+      {(showAddModal || editingEntry) && <AddEditModal />}
+      {showGoalModal && <GoalModal />}
+      {showBMIModal && <BMIModal />}
     </div>
   );
 };
