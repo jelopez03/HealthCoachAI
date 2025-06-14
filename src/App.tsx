@@ -11,7 +11,6 @@ import { PhotoAnalysis } from './components/AI/PhotoAnalysis';
 import { SmartGroceryList } from './components/AI/SmartGroceryList';
 import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
 import { WalkthroughModal } from './components/Onboarding/WalkthroughModal';
-import { Crown } from 'lucide-react';
 import type { Conversation, User, UserProfile } from './types';
 
 // Helper function to generate valid UUIDs for mock data
@@ -215,6 +214,7 @@ const App: React.FC = () => {
           user={mockUser}
           profile={profile}
           profileCompleted={profileCompleted}
+          onUpgrade={() => setShowPremiumUpgrade(true)}
         />
         
         <div className="flex-1 flex flex-col">
@@ -225,23 +225,6 @@ const App: React.FC = () => {
               <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full font-medium">
                 Open Access Demo
               </span>
-              
-              {/* Premium Banner moved here */}
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Crown className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-purple-800">Open Access Demo</h3>
-                </div>
-                <p className="text-sm text-purple-700 mb-3">
-                  All premium features are unlocked for testing
-                </p>
-                <button 
-                  onClick={() => setShowPremiumUpgrade(true)}
-                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
-                >
-                  Upgrade
-                </button>
-              </div>
             </div>
             <div className="flex items-center">
               <img 
