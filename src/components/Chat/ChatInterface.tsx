@@ -455,7 +455,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               ) : (
                 <Send className="w-5 h-5" />
               )}
-            </button>
+            </motion.button>
           </form>
         </div>
       </div>
