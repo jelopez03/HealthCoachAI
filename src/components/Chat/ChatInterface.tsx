@@ -229,7 +229,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
     <div className="flex h-full bg-white">
       {/* Conversation History Sidebar */}
       <div className="w-80 bg-gray-50 border-r border-gray-200 flex flex-col h-full">
-        {/* Header */}
+        {/* Header - Fixed */}
         <div className="p-4 border-b border-gray-200 bg-white flex-shrink-0">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800 flex items-center">
@@ -252,9 +252,9 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
           </button>
         </div>
 
-        {/* Conversations List with Fixed Height and Scrollbar */}
-        <div className="flex-1 p-4 overflow-hidden">
-          <div className="h-full overflow-y-auto">
+        {/* Conversations List - Scrollable with Fixed Height */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <div className="h-full overflow-y-auto p-4">
             {conversations.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -455,7 +455,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               ) : (
                 <Send className="w-5 h-5" />
               )}
-            </motion.button>
+            </button>
           </form>
         </div>
       </div>
