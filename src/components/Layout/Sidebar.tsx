@@ -114,81 +114,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Content for other pages */}
-        <div className="flex-1 p-4">
-          <div className="text-center py-8 text-gray-500">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              {currentPage === 'chat' && <Heart className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'analytics' && <BarChart3 className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'exercise' && <Activity className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'photo-analysis' && <Camera className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'grocery-list' && <ShoppingCart className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'reports' && <TrendingUp className="w-8 h-8 text-gray-400" />}
-              {currentPage === 'profile' && <User className="w-8 h-8 text-gray-400" />}
-            </div>
-            <p className="font-medium">
-              {currentPage === 'chat' && 'AI Health Coach'}
-              {currentPage === 'analytics' && (
-                <span className="flex items-center justify-center space-x-2">
-                  <span>Progress Analytics</span>
-                  <Crown className="w-4 h-4 text-purple-500" />
-                </span>
-              )}
-              {currentPage === 'exercise' && 'Exercise & Habits'}
-              {currentPage === 'photo-analysis' && (
-                <span className="flex items-center justify-center space-x-2">
-                  <span>AI Photo Analysis</span>
-                  <Crown className="w-4 h-4 text-purple-500" />
-                </span>
-              )}
-              {currentPage === 'grocery-list' && (
-                <span className="flex items-center justify-center space-x-2">
-                  <span>Smart Grocery Lists</span>
-                  <Crown className="w-4 h-4 text-purple-500" />
-                </span>
-              )}
-              {currentPage === 'reports' && (
-                <span className="flex items-center justify-center space-x-2">
-                  <span>Weekly Reports</span>
-                  <Crown className="w-4 h-4 text-purple-500" />
-                </span>
-              )}
-              {currentPage === 'profile' && 'Profile Settings'}
-            </p>
-            <p className="text-sm">
-              {currentPage === 'chat' && 'Powered by Google Gemini 2.0 Flash'}
-              {currentPage === 'analytics' && (
-                <span className="flex items-center justify-center space-x-1 text-purple-600">
-                  <Crown className="w-3 h-3" />
-                  <span>Premium Feature - Track your health progress</span>
-                </span>
-              )}
-              {currentPage === 'exercise' && 'Monitor workouts and habits'}
-              {currentPage === 'photo-analysis' && (
-                <span className="flex items-center justify-center space-x-1 text-purple-600">
-                  <Crown className="w-3 h-3" />
-                  <span>Premium Feature - Analyze food photos with AI</span>
-                </span>
-              )}
-              {currentPage === 'grocery-list' && (
-                <span className="flex items-center justify-center space-x-1 text-purple-600">
-                  <Crown className="w-3 h-3" />
-                  <span>Premium Feature - AI-generated shopping lists</span>
-                </span>
-              )}
-              {currentPage === 'reports' && (
-                <span className="flex items-center justify-center space-x-1 text-purple-600">
-                  <Crown className="w-3 h-3" />
-                  <span>Premium Feature - Detailed weekly insights</span>
-                </span>
-              )}
-              {currentPage === 'profile' && 'Manage your personal information'}
-            </p>
-          </div>
-        </div>
-
         {/* Demo Info Footer */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="mt-auto p-4 border-t border-gray-200">
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-4 text-center border border-purple-200">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Crown className="w-5 h-5 text-purple-600" />

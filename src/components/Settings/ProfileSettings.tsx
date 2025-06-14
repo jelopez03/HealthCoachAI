@@ -467,13 +467,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="w-10 h-10 bg-gradient-to-r from-sky-500 to-blue-500 rounded-xl flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">Basic Information</h2>
+                <h2 className="text-xl font-bold text-gray-800">Basic Information</h2>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Full Name <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -487,7 +487,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Email Address <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -518,7 +518,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Age <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -537,7 +537,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">Gender</label>
+                <label className="block text-sm font-medium text-gray-700 mb-3">Gender</label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value }))}
@@ -550,7 +550,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Height <span className="text-red-500">*</span>
                 </label>
                 <div className="flex items-center space-x-3">
@@ -573,7 +573,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       required
                     />
                   </div>
-                  <span className="text-gray-600 font-semibold">feet</span>
+                  <span className="text-gray-600 font-medium">feet</span>
                   <div className="relative flex-1">
                     <input
                       type="number"
@@ -592,7 +592,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       required
                     />
                   </div>
-                  <span className="text-gray-600 font-semibold">inches</span>
+                  <span className="text-gray-600 font-medium">inches</span>
                 </div>
                 {heightError && (
                   <p className="text-red-500 text-sm mt-2 font-medium">{heightError}</p>
@@ -603,7 +603,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Weight (lbs) <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -640,7 +640,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center">
                   <Activity className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">Activity Level</h2>
+                <h2 className="text-xl font-bold text-gray-800">Activity Level</h2>
               </div>
             </div>
             
@@ -671,7 +671,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                   <div className="flex items-center space-x-4">
                     <div className={`w-4 h-4 rounded-full bg-gradient-to-r ${option.color}`}></div>
                     <div>
-                      <div className="font-bold text-gray-800 text-lg">{option.label}</div>
+                      <div className="font-semibold text-gray-800 text-lg">{option.label}</div>
                       <div className="text-gray-600">{option.desc}</div>
                     </div>
                   </div>
@@ -697,7 +697,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                   <Target className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">Health Goals</h2>
+                <h2 className="text-xl font-bold text-gray-800">Health Goals</h2>
                 <span className="text-red-500 text-lg font-bold">*</span>
               </div>
             </div>
@@ -714,7 +714,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                       : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                   }`}
                 >
-                  <div className="font-semibold">{goal}</div>
+                  <div className="font-medium">{goal}</div>
                 </button>
               ))}
             </div>
@@ -740,13 +740,13 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-amber-500 rounded-xl flex items-center justify-center">
                   <Utensils className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">Dietary Preferences</h2>
+                <h2 className="text-xl font-bold text-gray-800">Dietary Preferences</h2>
               </div>
             </div>
             
             <div className="space-y-8">
               <div>
-                <h3 className="font-bold text-gray-800 mb-4 text-lg">Dietary Restrictions</h3>
+                <h3 className="font-semibold text-gray-800 mb-4 text-lg">Dietary Restrictions</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {DIETARY_RESTRICTIONS.map((restriction) => (
                     <button
@@ -759,14 +759,14 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                     >
-                      <div className="font-semibold">{restriction}</div>
+                      <div className="font-medium">{restriction}</div>
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="font-bold text-gray-800 mb-4 text-lg flex items-center">
+                <h3 className="font-semibold text-gray-800 mb-4 text-lg flex items-center">
                   <AlertTriangle className="w-5 h-5 text-red-500 mr-2" />
                   Allergies
                 </h3>
@@ -782,7 +782,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                           : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
                       }`}
                     >
-                      <div className="font-semibold">{allergy}</div>
+                      <div className="font-medium">{allergy}</div>
                     </button>
                   ))}
                 </div>
@@ -807,7 +807,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
                 <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
                   <Target className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">Current Habits & Notes</h2>
+                <h2 className="text-xl font-bold text-gray-800">Current Habits & Notes</h2>
               </div>
             </div>
             <textarea
@@ -826,7 +826,7 @@ export const ProfileSettings: React.FC<ProfileSettingsProps> = ({
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={loading || !!emailError || !!heightError}
-              className={`flex items-center px-10 py-4 rounded-xl font-bold text-lg transition-all disabled:opacity-50 shadow-lg ${
+              className={`flex items-center px-10 py-4 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 shadow-lg ${
                 isProfileComplete()
                   ? 'bg-gradient-to-r from-sky-500 to-emerald-500 text-white hover:from-sky-600 hover:to-emerald-600 hover:shadow-xl'
                   : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 hover:shadow-xl'

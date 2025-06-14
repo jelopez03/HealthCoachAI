@@ -37,7 +37,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     id: '1',
     conversation_id: conversation?.id || 'default',
     role: 'assistant',
-    content: `Hello${userProfile?.name ? ` ${userProfile.name}` : ''}! 👋 I'm your AI Health Coach, powered by Google Gemini. I'm here to help you with personalized nutrition advice, meal planning, healthy recipes, and lifestyle guidance. 
+    content: `Hello${userProfile?.name ? ` ${userProfile.name}` : ''}! 👋 I'm your AI Health Coach, powered by Google Gemini 2.5 Flash. I'm here to help you with personalized nutrition advice, meal planning, healthy recipes, and lifestyle guidance. 
 
 ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(', ') || 'your health goals'}. ` : ''}What would you like to work on today?`,
     message_type: 'text',
@@ -335,7 +335,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               </h2>
               <p className="text-sm text-gray-600 flex items-center">
                 <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                Powered by Google Gemini 2.0 Flash
+                Powered by Google Gemini 2.5 Flash
               </p>
             </div>
             <div className="flex items-center space-x-2">
