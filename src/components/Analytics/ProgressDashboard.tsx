@@ -50,12 +50,12 @@ interface WeeklyStats {
 }
 
 export const ProgressDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | '3months' | 'year'>('week');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Mock user data
-  const userName = "Malek Khan";
+  // Get user name from profile or default
+  const userName = profile?.name || "Jane Smith";
   
   // Mock progress data
   const progressData: ProgressData[] = [
@@ -111,12 +111,23 @@ export const ProgressDashboard: React.FC = () => {
           <p className="text-teal-100 mb-2">{getGreeting()}, {userName}</p>
           <h1 className="text-3xl font-bold mb-4">Welcome Back!</h1>
           <p className="text-teal-100 mb-6 max-w-md">
-            At FitLife, we understand that fitness isn't one-size-fits-all. That's why we 
-            offer a diverse range of programs and resources.
+            Your personalized health dashboard is ready. Track your progress, 
+            achieve your goals, and maintain a healthy lifestyle with AI-powered insights.
           </p>
-          <button className="bg-white bg-opacity-20 text-white px-6 py-3 rounded-xl hover:bg-opacity-30 transition-all backdrop-blur-sm font-medium">
-            Learn More →
-          </button>
+          <div className="flex items-center space-x-4">
+            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
+              <div className="text-sm text-teal-100">Current Goal</div>
+              <div className="font-semibold">
+                {profile?.health_goals?.[0] || 'Weight Loss'}
+              </div>
+            </div>
+            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
+              <div className="text-sm text-teal-100">Activity Level</div>
+              <div className="font-semibold capitalize">
+                {profile?.activity_level || 'Moderate'}
+              </div>
+            </div>
+          </div>
         </div>
         
         {/* Illustration */}
@@ -244,7 +255,7 @@ export const ProgressDashboard: React.FC = () => {
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">Reports</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Health Reports</h3>
         <button className="text-gray-400 hover:text-gray-600">
           <ChevronRight className="w-5 h-5" />
         </button>
@@ -283,8 +294,8 @@ export const ProgressDashboard: React.FC = () => {
       </div>
       
       <div className="text-center">
-        <p className="text-gray-600 text-sm mb-2">Your Reports are not good</p>
-        <p className="text-gray-500 text-xs">Need to improve performance</p>
+        <p className="text-gray-600 text-sm mb-2">Great progress this week!</p>
+        <p className="text-gray-500 text-xs">Keep up the excellent work</p>
       </div>
     </motion.div>
   );
@@ -404,8 +415,10 @@ export const ProgressDashboard: React.FC = () => {
               <div className="text-sm text-green-600 font-medium">-2.6 lbs</div>
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-800 mb-1">157.2</div>
-          <div className="text-gray-600 text-sm">Current Weight</div>
+          <div className="text-2xl font-bold text-gray-800 mb-1">
+            {profile?.weight || 157.2}
+          </div>
+          <div className="text-gray-600 text-sm">Current Weight (lbs)</div>
         </motion.div>
 
         <motion.div
