@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save } from 'lucide-react';
+import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save, Weight } from 'lucide-react';
+import { WeightTracker } from './WeightTracker';
 
 interface Workout {
   id: string;
@@ -84,7 +85,7 @@ export const ExerciseTracker: React.FC = () => {
   const [workoutTimer, setWorkoutTimer] = useState(0);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
-  const [view, setView] = useState<'today' | 'calendar' | 'habits'>('today');
+  const [view, setView] = useState<'today' | 'calendar' | 'habits' | 'weight'>('today');
 
   // Mock data
   const [workouts, setWorkouts] = useState<Workout[]>([
@@ -476,7 +477,8 @@ export const ExerciseTracker: React.FC = () => {
         {[
           { id: 'today', label: 'Today', icon: Activity },
           { id: 'calendar', label: 'Calendar', icon: Calendar },
-          { id: 'habits', label: 'Habits', icon: Target }
+          { id: 'habits', label: 'Habits', icon: Target },
+          { id: 'weight', label: 'Weight Log', icon: Weight }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -492,6 +494,9 @@ export const ExerciseTracker: React.FC = () => {
           </button>
         ))}
       </div>
+
+      {/* Weight Tracker View */}
+      {view === 'weight' && <WeightTracker />}
 
       {/* Today View */}
       {view === 'today' && (
@@ -547,7 +552,7 @@ export const ExerciseTracker: React.FC = () => {
               className="bg-white rounded-xl p-6 shadow-sm border border-gray-200"
             >
               <div className="flex items-center justify-between mb-3">
-                <Target className="w-8 h-8 text-purple-500" />
+                <Target className="w-8 h-8 text-emerald-500" />
                 <span className="text-2xl">🎯</span>
               </div>
               <div className="text-2xl font-bold text-gray-800 mb-1">132</div>
