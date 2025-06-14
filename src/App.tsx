@@ -214,11 +214,10 @@ const App: React.FC = () => {
           user={mockUser}
           profile={profile}
           profileCompleted={profileCompleted}
-          onShowPremiumUpgrade={() => setShowPremiumUpgrade(true)}
         />
         
         <div className="flex-1 flex flex-col">
-          {/* Header with Bolt Badge and Pricing Link */}
+          {/* Header with Bolt Badge */}
           <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-800">HealthCoach AI</h1>
@@ -226,18 +225,6 @@ const App: React.FC = () => {
                 Open Access Demo
               </span>
             </div>
-            
-            {/* Center section with pricing link */}
-            <div className="flex items-center">
-              <button 
-                onClick={() => setShowPremiumUpgrade(true)}
-                className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 px-4 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
-              >
-                <span>View Pricing Plans</span>
-              </button>
-            </div>
-            
-            {/* Right section with Bolt badge */}
             <div className="flex items-center">
               <a 
                 href="https://bolt.new/" 
