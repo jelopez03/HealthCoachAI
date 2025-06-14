@@ -207,19 +207,24 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="h-screen flex bg-gray-50">
-        <Sidebar
-          onNavigate={handleNavigate}
-          currentPage={currentPage}
-          user={mockUser}
-          profile={profile}
-          profileCompleted={profileCompleted}
-          onUpgrade={() => setShowPremiumUpgrade(true)}
-        />
+      {/* Fixed viewport container - prevents page scrolling */}
+      <div className="h-screen w-screen overflow-hidden flex bg-gray-50">
+        {/* Fixed Sidebar */}
+        <div className="flex-shrink-0">
+          <Sidebar
+            onNavigate={handleNavigate}
+            currentPage={currentPage}
+            user={mockUser}
+            profile={profile}
+            profileCompleted={profileCompleted}
+            onUpgrade={() => setShowPremiumUpgrade(true)}
+          />
+        </div>
         
-        <div className="flex-1 flex flex-col">
-          {/* Header with Bolt Badge */}
-          <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        {/* Main Content Area with its own scroll */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Header with Bolt Badge - Fixed */}
+          <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <h1 className="text-xl font-semibold text-gray-800">HealthCoach AI</h1>
               <span className="bg-emerald-100 text-emerald-700 text-xs px-2 py-1 rounded-full font-medium">
@@ -236,7 +241,8 @@ const App: React.FC = () => {
             </div>
           </div>
           
-          <div className="flex-1">
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto">
             {renderMainContent()}
           </div>
         </div>
