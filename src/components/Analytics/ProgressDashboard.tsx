@@ -38,12 +38,6 @@ interface ProgressData {
   heartRate: number;
 }
 
-interface WeightData {
-  date: string;
-  weight: number;
-  change: number;
-}
-
 interface WeeklyStats {
   totalWorkouts: number;
   totalCalories: number;
@@ -56,31 +50,13 @@ interface WeeklyStats {
 }
 
 export const ProgressDashboard: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | '3months' | 'year'>('week');
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Get user name from profile or default
-  const userName = profile?.name || "Jane Smith";
+  // Mock user data
+  const userName = "Malek Khan";
   
-  // Mock weight tracking data (daily for the past 2 weeks)
-  const weightData: WeightData[] = [
-    { date: '2024-02-26', weight: 162.4, change: 0 },
-    { date: '2024-02-27', weight: 162.1, change: -0.3 },
-    { date: '2024-02-28', weight: 161.8, change: -0.3 },
-    { date: '2024-02-29', weight: 161.5, change: -0.3 },
-    { date: '2024-03-01', weight: 161.2, change: -0.3 },
-    { date: '2024-03-02', weight: 160.9, change: -0.3 },
-    { date: '2024-03-03', weight: 160.6, change: -0.3 },
-    { date: '2024-03-04', weight: 160.3, change: -0.3 },
-    { date: '2024-03-05', weight: 160.0, change: -0.3 },
-    { date: '2024-03-06', weight: 159.7, change: -0.3 },
-    { date: '2024-03-07', weight: 159.4, change: -0.3 },
-    { date: '2024-03-08', weight: 159.1, change: -0.3 },
-    { date: '2024-03-09', weight: 158.8, change: -0.3 },
-    { date: '2024-03-10', weight: 158.5, change: -0.3 }
-  ];
-
   // Mock progress data
   const progressData: ProgressData[] = [
     { date: '2024-03-01', weight: 159.8, calories: 1520, water: 2.1, steps: 2581, workouts: 1, sleep: 7.5, heartRate: 72 },
@@ -135,23 +111,12 @@ export const ProgressDashboard: React.FC = () => {
           <p className="text-teal-100 mb-2">{getGreeting()}, {userName}</p>
           <h1 className="text-3xl font-bold mb-4">Welcome Back!</h1>
           <p className="text-teal-100 mb-6 max-w-md">
-            Your personalized health dashboard is ready. Track your progress, 
-            achieve your goals, and maintain a healthy lifestyle with AI-powered insights.
+            At FitLife, we understand that fitness isn't one-size-fits-all. That's why we 
+            offer a diverse range of programs and resources.
           </p>
-          <div className="flex items-center space-x-4">
-            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
-              <div className="text-sm text-teal-100">Current Goal</div>
-              <div className="font-semibold">
-                {profile?.health_goals?.[0] || 'Weight Loss'}
-              </div>
-            </div>
-            <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
-              <div className="text-sm text-teal-100">Activity Level</div>
-              <div className="font-semibold capitalize">
-                {profile?.activity_level || 'Moderate'}
-              </div>
-            </div>
-          </div>
+          <button className="bg-white bg-opacity-20 text-white px-6 py-3 rounded-xl hover:bg-opacity-30 transition-all backdrop-blur-sm font-medium">
+            Learn More →
+          </button>
         </div>
         
         {/* Illustration */}
@@ -221,7 +186,7 @@ export const ProgressDashboard: React.FC = () => {
     </motion.div>
   );
 
-  const WeightTrackingChart = () => (
+  const ActivityChart = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -230,99 +195,43 @@ export const ProgressDashboard: React.FC = () => {
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">Weight Tracking</h3>
-          <p className="text-gray-600 text-sm">Daily weight progress over time</p>
+          <h3 className="text-lg font-semibold text-gray-800">Fitness Activity</h3>
+          <p className="text-gray-600 text-sm">Weekly performance overview</p>
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-            <span className="text-gray-600">Weight (lbs)</span>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-gray-600">Walk</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
-            <span className="text-gray-600">Goal: 155 lbs</span>
+            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+            <span className="text-gray-600">Running</span>
           </div>
         </div>
       </div>
       
-      {/* Weight Bar Chart */}
-      <div className="h-64 relative">
-        {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 -ml-8">
-          <span>163</span>
-          <span>161</span>
-          <span>159</span>
-          <span>157</span>
-          <span>155</span>
-        </div>
-        
-        {/* Chart area */}
-        <div className="h-full flex items-end justify-between space-x-2 ml-4">
-          {weightData.map((data, index) => {
-            // Calculate position based on weight range (155-163 lbs)
-            const minWeight = 155;
-            const maxWeight = 163;
-            const heightPercentage = ((data.weight - minWeight) / (maxWeight - minWeight)) * 100;
-            
-            return (
-              <div key={index} className="flex-1 flex flex-col items-center relative group">
-                {/* Weight value on top of bar */}
-                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
-                    {data.weight} lbs
-                    {data.change !== 0 && (
-                      <div className={`text-xs ${data.change > 0 ? 'text-red-300' : 'text-green-300'}`}>
-                        {data.change > 0 ? '+' : ''}{data.change.toFixed(1)} lbs
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Bar */}
+      {/* Chart */}
+      <div className="h-64 flex items-end justify-between space-x-2">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
+          const walkHeight = Math.random() * 60 + 20;
+          const runHeight = Math.random() * 40 + 10;
+          
+          return (
+            <div key={day} className="flex-1 flex flex-col items-center">
+              <div className="w-full flex flex-col items-center space-y-1 mb-2">
                 <div 
-                  className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-md transition-all duration-1000 ease-out hover:from-purple-600 hover:to-purple-500 cursor-pointer"
-                  style={{ height: `${heightPercentage}%`, minHeight: '20px' }}
-                >
-                  {/* Weight value inside bar */}
-                  <div className="flex items-end justify-center h-full pb-2">
-                    <span className="text-white text-xs font-medium transform -rotate-90 origin-center">
-                      {data.weight}
-                    </span>
-                  </div>
-                </div>
-                
-                {/* Date label */}
-                <span className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-center">
-                  {new Date(data.date).getDate()}/{new Date(data.date).getMonth() + 1}
-                </span>
+                  className="w-8 bg-green-500 rounded-t-lg transition-all duration-1000 ease-out"
+                  style={{ height: `${walkHeight}%` }}
+                ></div>
+                <div 
+                  className="w-8 bg-orange-500 rounded-t-lg transition-all duration-1000 ease-out"
+                  style={{ height: `${runHeight}%` }}
+                ></div>
               </div>
-            );
-          })}
-        </div>
-        
-        {/* Goal line */}
-        <div 
-          className="absolute left-4 right-0 border-t-2 border-dashed border-green-500 opacity-50"
-          style={{ bottom: `${((155 - 155) / (163 - 155)) * 100}%` }}
-        >
-          <span className="absolute right-0 -top-6 text-xs text-green-600 font-medium">Goal: 155 lbs</span>
-        </div>
-      </div>
-      
-      {/* Chart summary */}
-      <div className="mt-4 flex items-center justify-between text-sm">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <TrendingDown className="w-4 h-4 text-green-500" />
-            <span className="text-green-600 font-medium">-3.9 lbs total</span>
-          </div>
-          <div className="text-gray-600">
-            Current: {weightData[weightData.length - 1].weight} lbs
-          </div>
-        </div>
-        <div className="text-gray-500">
-          Last 14 days
-        </div>
+              <span className="text-xs text-gray-600 font-medium">{day}</span>
+            </div>
+          );
+        })}
       </div>
     </motion.div>
   );
@@ -335,7 +244,7 @@ export const ProgressDashboard: React.FC = () => {
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold text-gray-800">Health Reports</h3>
+        <h3 className="text-lg font-semibold text-gray-800">Reports</h3>
         <button className="text-gray-400 hover:text-gray-600">
           <ChevronRight className="w-5 h-5" />
         </button>
@@ -374,8 +283,8 @@ export const ProgressDashboard: React.FC = () => {
       </div>
       
       <div className="text-center">
-        <p className="text-gray-600 text-sm mb-2">Great progress this week!</p>
-        <p className="text-gray-500 text-xs">Keep up the excellent work</p>
+        <p className="text-gray-600 text-sm mb-2">Your Reports are not good</p>
+        <p className="text-gray-500 text-xs">Need to improve performance</p>
       </div>
     </motion.div>
   );
@@ -435,7 +344,7 @@ export const ProgressDashboard: React.FC = () => {
       <WelcomeCard />
 
       {/* Main Metrics Grid */}
-      <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Calories"
           value="1520"
@@ -469,12 +378,12 @@ export const ProgressDashboard: React.FC = () => {
           trendValue="Normal"
           chart={<MiniChart data={[70, 65, 75, 68, 72, 69, 71]} color="bg-pink-200" />}
         />
-      </motion.div>
+      </div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <WeightTrackingChart />
+          <ActivityChart />
         </div>
         <ReportsCard />
       </div>
@@ -495,10 +404,8 @@ export const ProgressDashboard: React.FC = () => {
               <div className="text-sm text-green-600 font-medium">-2.6 lbs</div>
             </div>
           </div>
-          <div className="text-2xl font-bold text-gray-800 mb-1">
-            {profile?.weight || 158.5}
-          </div>
-          <div className="text-gray-600 text-sm">Current Weight (lbs)</div>
+          <div className="text-2xl font-bold text-gray-800 mb-1">157.2</div>
+          <div className="text-gray-600 text-sm">Current Weight</div>
         </motion.div>
 
         <motion.div
@@ -594,7 +501,7 @@ export const ProgressDashboard: React.FC = () => {
             </div>
             <div>
               <p className="font-medium text-gray-800">Weight Goal</p>
-              <p className="text-sm text-gray-600">Lost 3.9 lbs in 2 weeks</p>
+              <p className="text-sm text-gray-600">Lost 2.6 lbs this week</p>
             </div>
           </div>
           
