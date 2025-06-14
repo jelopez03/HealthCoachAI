@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Heart, User, ChevronRight, TrendingUp, Activity, Camera, ShoppingCart, BarChart3, AlertCircle, Calendar } from 'lucide-react';
+import { Crown, Heart, User, ChevronRight, TrendingUp, Activity, ShoppingCart, BarChart3, AlertCircle, Calendar } from 'lucide-react';
 import type { User as UserType, UserProfile } from '../../types';
 
 interface SidebarProps {
-  onNavigate?: (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list' | 'meal-planner') => void;
+  onNavigate?: (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'grocery-list' | 'meal-planner') => void;
   currentPage?: string;
   user: UserType;
   profile: UserProfile | null;
@@ -25,7 +25,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'meal-planner', label: 'Meal Planner', icon: Calendar, isPremium: true },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
     { id: 'exercise', label: 'Exercise & Habits', icon: Activity, isPremium: false },
-    { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera, isPremium: true },
     { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart, isPremium: true },
     { id: 'reports', label: 'Weekly Reports', icon: TrendingUp, isPremium: true },
     { id: 'profile', label: 'Profile Settings', icon: User, isPremium: false }

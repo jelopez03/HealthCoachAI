@@ -7,7 +7,6 @@ import { Preferences } from './components/Settings/Preferences';
 import { WeeklyReport } from './components/Reports/WeeklyReport';
 import { ProgressDashboard } from './components/Analytics/ProgressDashboard';
 import { ExerciseTracker } from './components/Exercise/ExerciseTracker';
-import { PhotoAnalysis } from './components/AI/PhotoAnalysis';
 import { SmartGroceryList } from './components/AI/SmartGroceryList';
 import { MealPlanner } from './components/MealPlanner/MealPlanner';
 import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
@@ -34,7 +33,7 @@ const mockUser: User = {
 const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list' | 'meal-planner'>('profile'); // Start with profile
+  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'grocery-list' | 'meal-planner'>('profile'); // Start with profile
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
@@ -111,7 +110,7 @@ const App: React.FC = () => {
     }
   }, [profileCompleted]);
 
-  const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list' | 'meal-planner') => {
+  const handleNavigate = (page: 'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'grocery-list' | 'meal-planner') => {
     setCurrentPage(page);
     
     // Close walkthrough when navigating
@@ -187,8 +186,6 @@ const App: React.FC = () => {
         return <ProgressDashboard />;
       case 'exercise':
         return <ExerciseTracker userId={mockUser.id} />;
-      case 'photo-analysis':
-        return <PhotoAnalysis />;
       case 'grocery-list':
         return <SmartGroceryList />;
       case 'meal-planner':
