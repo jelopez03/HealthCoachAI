@@ -239,24 +239,17 @@ const App: React.FC = () => {
                   onClick={() => setShowPremiumUpgrade(true)}
                   className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-colors text-sm"
                 >
-                  Premium
+                  Upgrade
                 </button>
               </div>
             </div>
             <div className="flex items-center">
-              <a 
-                href="https://bolt.new/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block"
-              >
-                <img 
-                  src="/black_circle_360x360.png" 
-                  alt="Powered by Bolt" 
-                  className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
-                  title="Powered by Bolt - Click to visit bolt.new"
-                />
-              </a>
+              <img 
+                src="/black_circle_360x360.png" 
+                alt="Powered by Bolt" 
+                className="w-16 h-16 opacity-80 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 transform transition-transform duration-200"
+                title="Powered by Bolt - Click to visit bolt.new"
+              />
             </div>
           </div>
           

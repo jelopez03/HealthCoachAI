@@ -114,15 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Demo Info Footer - Premium banner removed from here */}
-        <div className="mt-auto p-4 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-lg p-4 text-center border border-gray-200">
-            <h3 className="font-semibold text-gray-800 mb-2">Demo Mode</h3>
-            <p className="text-sm text-gray-600">
-              All features are available for testing
-            </p>
-          </div>
-        </div>
+        {/* Removed Demo Info Footer - Premium banner moved to header */}
       </div>
 
       {/* Premium Upgrade Modal */}
