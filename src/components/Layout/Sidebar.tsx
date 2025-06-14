@@ -14,16 +14,16 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   onNavigate,
-  currentPage = 'chat',
+  currentPage = 'analytics', // Default to analytics
   user,
   profile,
   profileCompleted = false,
   onUpgrade
 }) => {
   const navigationItems = [
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
     { id: 'chat', label: 'AI Chat', icon: Heart, isPremium: false },
     { id: 'meal-planner', label: 'Meal Planner', icon: Calendar, isPremium: true },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, isPremium: true },
     { id: 'exercise', label: 'Exercise & Habits', icon: Activity, isPremium: false },
     { id: 'photo-analysis', label: 'Photo Analysis', icon: Camera, isPremium: true },
     { id: 'grocery-list', label: 'Smart Grocery List', icon: ShoppingCart, isPremium: true },

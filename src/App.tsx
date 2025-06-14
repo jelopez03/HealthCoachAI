@@ -34,7 +34,7 @@ const mockUser: User = {
 const App: React.FC = () => {
   const [currentConversation, setCurrentConversation] = useState<Conversation | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list' | 'meal-planner'>('profile'); // Start with profile
+  const [currentPage, setCurrentPage] = useState<'chat' | 'profile' | 'preferences' | 'reports' | 'analytics' | 'exercise' | 'photo-analysis' | 'grocery-list' | 'meal-planner'>('analytics'); // Start with analytics as main page
   const [showPremiumUpgrade, setShowPremiumUpgrade] = useState(false);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
@@ -87,11 +87,6 @@ const App: React.FC = () => {
           parsedProfile.health_goals?.length > 0
         );
         setProfileCompleted(isComplete);
-        
-        // If profile is complete, show chat page instead
-        if (isComplete) {
-          setCurrentPage('chat');
-        }
       } catch (error) {
         console.error('Error parsing saved profile:', error);
       }
@@ -132,8 +127,8 @@ const App: React.FC = () => {
     // Save to localStorage
     localStorage.setItem('healthcoach-profile', JSON.stringify(updatedProfile));
     
-    // Navigate to chat after profile completion
-    setCurrentPage('chat');
+    // Navigate to analytics after profile completion
+    setCurrentPage('analytics');
     
     // Show walkthrough for first-time users
     const hasVisited = localStorage.getItem('healthcoach-visited');
@@ -194,7 +189,6 @@ const App: React.FC = () => {
       case 'meal-planner':
         return <MealPlanner />;
       case 'chat':
-      default:
         return (
           <ChatInterface 
             conversation={currentConversation}
@@ -205,6 +199,8 @@ const App: React.FC = () => {
             userProfile={profile}
           />
         );
+      default:
+        return <ProgressDashboard />;
     }
   };
 
