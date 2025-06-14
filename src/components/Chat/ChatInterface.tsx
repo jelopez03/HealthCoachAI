@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Video, Volume2, FileText, Utensils, Sparkles, Brain, Target, MessageSquare, Plus, Trash2, Edit3 } from 'lucide-react';
+import { Send, Loader2, Video, Volume2, FileText, Utensils, Sparkles, Brain, Target, MessageSquare, Plus, Trash2, Edit3, Paperclip, Mic, Upload } from 'lucide-react';
 import type { Message, Conversation, UserProfile } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { VideoPlayer } from './VideoPlayer';
@@ -30,7 +30,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Mock initial message
   const initialMessage: Message = {
@@ -56,6 +59,14 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    // Auto-resize textarea
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 120) + 'px';
+    }
+  }, [inputMessage]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -121,6 +132,61 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
     } finally {
       setLoading(false);
       setIsTyping(false);
+    }
+  };
+
+  const handleFileAttachment = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Handle file upload logic here
+      console.log('File selected:', file.name);
+      // You could add file upload functionality here
+      // For now, we'll just show a message
+      const fileMessage: Message = {
+        id: Date.now().toString(),
+        conversation_id: conversation?.id || 'default',
+        role: 'user',
+        content: `📎 Uploaded file: ${file.name}`,
+        message_type: 'text',
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, fileMessage]);
+    }
+    // Reset the input
+    event.target.value = '';
+  };
+
+  const handleVoiceMessage = () => {
+    if (isRecording) {
+      // Stop recording
+      setIsRecording(false);
+      console.log('Stopped voice recording');
+      // Add voice message to chat
+      const voiceMessage: Message = {
+        id: Date.now().toString(),
+        conversation_id: conversation?.id || 'default',
+        role: 'user',
+        content: '🎤 Voice message recorded',
+        message_type: 'text',
+        created_at: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, voiceMessage]);
+    } else {
+      // Start recording
+      setIsRecording(true);
+      console.log('Started voice recording');
+      // In a real implementation, you would start audio recording here
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
     }
   };
 
@@ -422,31 +488,79 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
+        {/* Modern Input Area */}
         <div className="flex-shrink-0 px-6 py-4 border-t border-gray-200 bg-white">
           <form onSubmit={handleSendMessage} className="flex items-end space-x-3">
-            <div className="flex-1">
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileSelect}
+              className="hidden"
+              accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.txt"
+            />
+            
+            {/* Attachment Button */}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleFileAttachment}
+              className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all"
+              title="Attach file"
+            >
+              <Paperclip className="w-5 h-5" />
+            </motion.button>
+
+            {/* Message Input */}
+            <div className="flex-1 relative">
               <textarea
+                ref={textareaRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage(e);
-                  }
-                }}
-                placeholder="Ask me about nutrition, meal planning, recipes, or health goals..."
-                className="w-full px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
+                onKeyDown={handleKeyPress}
+                placeholder="Type your message here..."
+                className="w-full px-4 py-3 pr-12 border border-gray-200 rounded-2xl resize-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all bg-gray-50 hover:bg-white focus:bg-white"
                 rows={1}
-                style={{ minHeight: '48px', maxHeight: '120px' }}
+                style={{ 
+                  minHeight: '48px', 
+                  maxHeight: '120px',
+                  lineHeight: '1.5'
+                }}
+                disabled={loading}
               />
+              
+              {/* Character count indicator (optional) */}
+              {inputMessage.length > 0 && (
+                <div className="absolute bottom-1 right-12 text-xs text-gray-400">
+                  {inputMessage.length}
+                </div>
+              )}
             </div>
+
+            {/* Voice Message Button */}
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleVoiceMessage}
+              className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                isRecording 
+                  ? 'bg-red-500 text-white animate-pulse' 
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              }`}
+              title={isRecording ? "Stop recording" : "Voice message"}
+            >
+              <Mic className="w-5 h-5" />
+            </motion.button>
+
+            {/* Send Button */}
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading || !inputMessage.trim()}
-              className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-sky-500 to-emerald-500 text-white rounded-full hover:from-sky-600 hover:to-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-sky-500 to-emerald-500 text-white rounded-full hover:from-sky-600 hover:to-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -455,6 +569,23 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               )}
             </motion.button>
           </form>
+          
+          {/* Input hints */}
+          <div className="flex items-center justify-between mt-2 px-1">
+            <div className="flex items-center space-x-4 text-xs text-gray-500">
+              <span className="flex items-center space-x-1">
+                <Paperclip className="w-3 h-3" />
+                <span>Attach files</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <Mic className="w-3 h-3" />
+                <span>Voice message</span>
+              </span>
+            </div>
+            <div className="text-xs text-gray-400">
+              Press Enter to send, Shift+Enter for new line
+            </div>
+          </div>
         </div>
       </div>
     </div>
