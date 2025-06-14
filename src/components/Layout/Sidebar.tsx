@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation */}
-        <div className="space-y-1 mb-4">
+        <div className="space-y-1">
           {navigationItems.map((item) => (
             <button
               key={item.id}
