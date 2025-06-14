@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save, Weight } from 'lucide-react';
+import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save, Weight, CalendarDays } from 'lucide-react';
 import { WeightTracker } from './WeightTracker';
+import { WorkoutPlanningCalendar } from './WorkoutPlanningCalendar';
 
 interface Workout {
   id: string;
@@ -45,10 +46,6 @@ interface NewHabitForm {
   color: string;
 }
 
-interface ExerciseTrackerProps {
-  userId: string;
-}
-
 const EXERCISE_OPTIONS: ExerciseOption[] = [
   // Cardio
   { name: 'Running', type: 'cardio', defaultDuration: 30, estimatedCalories: 300, icon: '🏃‍♂️' },
@@ -82,6 +79,10 @@ const HABIT_ICONS = ['💧', '👟', '😴', '🧘', '📚', '🥗', '🏃', '�
 const HABIT_COLORS = ['blue', 'green', 'purple', 'pink', 'orange', 'red', 'yellow', 'indigo', 'teal', 'cyan'];
 const HABIT_UNITS = ['glasses', 'steps', 'hours', 'minutes', 'times', 'pages', 'servings', 'miles', 'reps', 'sets'];
 
+interface ExerciseTrackerProps {
+  userId: string;
+}
+
 export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -89,7 +90,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
   const [workoutTimer, setWorkoutTimer] = useState(0);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
-  const [view, setView] = useState<'today' | 'calendar' | 'habits' | 'weight'>('today');
+  const [view, setView] = useState<'today' | 'calendar' | 'habits' | 'weight' | 'planning'>('today');
 
   // Mock data
   const [workouts, setWorkouts] = useState<Workout[]>([
@@ -482,7 +483,8 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
           { id: 'today', label: 'Today', icon: Activity },
           { id: 'calendar', label: 'Calendar', icon: Calendar },
           { id: 'habits', label: 'Habits', icon: Target },
-          { id: 'weight', label: 'Weight Log', icon: Weight }
+          { id: 'weight', label: 'Weight Log', icon: Weight },
+          { id: 'planning', label: 'Workout Planning', icon: CalendarDays }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -501,6 +503,9 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
 
       {/* Weight Tracker View */}
       {view === 'weight' && <WeightTracker userId={userId} />}
+
+      {/* Workout Planning View */}
+      {view === 'planning' && <WorkoutPlanningCalendar userId={userId} />}
 
       {/* Today View */}
       {view === 'today' && (
