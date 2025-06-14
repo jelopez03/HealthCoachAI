@@ -882,32 +882,33 @@ export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
         )}
       </AnimatePresence>
 
-      {/* Header with Current Weight - Reduced size by 25% */}
+      {/* Responsive Green Header Banner */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-6 text-white"
-        style={{ transform: 'scale(0.75)', transformOrigin: 'top left', width: '133.33%' }}
+        className="w-full max-w-full mx-auto"
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Weight className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">Weight Tracker</h2>
-              <p className="text-emerald-100">Monitor your weight journey</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold">{stats.current.toFixed(1)}</div>
-            <div className="text-emerald-100">{unit}</div>
-            {stats.weeklyChange !== 0 && (
-              <div className={`flex items-center mt-2 ${stats.weeklyChange > 0 ? 'text-red-200' : 'text-green-200'}`}>
-                {stats.weeklyChange > 0 ? <TrendingUp className="w-4 h-4 mr-1" /> : <TrendingDown className="w-4 h-4 mr-1" />}
-                <span className="text-sm">{Math.abs(stats.weeklyChange).toFixed(1)} {unit} this week</span>
+        <div className="bg-gradient-to-br from-emerald-500 to-green-600 rounded-2xl p-4 sm:p-6 lg:p-8 text-white shadow-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center flex-shrink-0">
+                <Weight className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-            )}
+              <div className="min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold truncate">Weight Tracker</h2>
+                <p className="text-emerald-100 text-sm sm:text-base">Monitor your weight journey</p>
+              </div>
+            </div>
+            <div className="text-left sm:text-right flex-shrink-0">
+              <div className="text-2xl sm:text-3xl font-bold">{stats.current.toFixed(1)}</div>
+              <div className="text-emerald-100 text-sm sm:text-base">{unit}</div>
+              {stats.weeklyChange !== 0 && (
+                <div className={`flex items-center mt-1 sm:mt-2 ${stats.weeklyChange > 0 ? 'text-red-200' : 'text-green-200'} ${window.innerWidth < 640 ? 'justify-start' : 'justify-end'}`}>
+                  {stats.weeklyChange > 0 ? <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> : <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />}
+                  <span className="text-xs sm:text-sm">{Math.abs(stats.weeklyChange).toFixed(1)} {unit} this week</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
