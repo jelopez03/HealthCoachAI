@@ -8,6 +8,8 @@ import { AudioPlayer } from './AudioPlayer';
 import { MealPlanDisplay } from './MealPlanDisplay';
 import { RecipeDisplay } from './RecipeDisplay';
 import { geminiService } from '../../services/gemini';
+import { DatabaseService } from '../../services/database';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface ChatInterfaceProps {
   conversation: Conversation | null;
@@ -40,7 +42,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     id: '1',
     conversation_id: conversation?.id || 'default',
     role: 'assistant',
-    content: `Hello${userProfile?.name ? ` ${userProfile.name}` : ''}! 👋 I'm your AI Health Coach, powered by Google Gemini 2.5 Flash. I'm here to help you with personalized nutrition advice, meal planning, healthy recipes, and lifestyle guidance. 
+    content: `Hello${userProfile?.name ? ` ${userProfile.name}` : ''}! 👋 I'm your AI Health Coach, powered by Google Gemini Pro. I'm here to help you with personalized nutrition advice, meal planning, healthy recipes, and lifestyle guidance. 
 
 ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(', ') || 'your health goals'}. ` : ''}What would you like to work on today?`,
     message_type: 'text',
@@ -49,8 +51,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
 
   useEffect(() => {
     if (conversation) {
-      // Load messages for this conversation (in a real app, this would come from the database)
-      setMessages([initialMessage]);
+      loadMessages();
     } else {
       setMessages([]);
     }
@@ -68,8 +69,49 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
     }
   }, [inputMessage]);
 
+  const loadMessages = async () => {
+    try {
+      if (isSupabaseConfigured() && conversation) {
+        const conversationMessages = await DatabaseService.getMessages(conversation.id);
+        if (conversationMessages.length > 0) {
+          setMessages(conversationMessages);
+        } else {
+          setMessages([initialMessage]);
+        }
+      } else {
+        // Load from localStorage or use initial message
+        const savedMessages = localStorage.getItem(`messages-${conversation?.id}`);
+        if (savedMessages) {
+          setMessages(JSON.parse(savedMessages));
+        } else {
+          setMessages([initialMessage]);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([initialMessage]);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const saveMessage = async (message: Message) => {
+    try {
+      if (isSupabaseConfigured()) {
+        await DatabaseService.createMessage(message);
+      }
+      
+      // Also save to localStorage as backup
+      const conversationId = conversation?.id || 'default';
+      const savedMessages = localStorage.getItem(`messages-${conversationId}`);
+      const currentMessages = savedMessages ? JSON.parse(savedMessages) : [];
+      const updatedMessages = [...currentMessages, message];
+      localStorage.setItem(`messages-${conversationId}`, JSON.stringify(updatedMessages));
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -92,6 +134,9 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, userMessage]);
+      
+      // Save user message
+      await saveMessage(userMessage);
 
       // Get conversation history for context
       const conversationHistory = messages.map(msg => ({
@@ -116,6 +161,16 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI message
+      await saveMessage(aiMessage);
+
+      // Update conversation if it exists
+      if (conversation && isSupabaseConfigured()) {
+        await DatabaseService.updateConversation(conversation.id, {
+          updated_at: new Date().toISOString()
+        });
+      }
 
     } catch (error) {
       console.error('Error sending message:', error);
@@ -139,13 +194,12 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Handle file upload logic here
       console.log('File selected:', file.name);
-      // You could add file upload functionality here
-      // For now, we'll just show a message
+      
       const fileMessage: Message = {
         id: Date.now().toString(),
         conversation_id: conversation?.id || 'default',
@@ -155,17 +209,18 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, fileMessage]);
+      await saveMessage(fileMessage);
     }
     // Reset the input
     event.target.value = '';
   };
 
-  const handleVoiceMessage = () => {
+  const handleVoiceMessage = async () => {
     if (isRecording) {
       // Stop recording
       setIsRecording(false);
       console.log('Stopped voice recording');
-      // Add voice message to chat
+      
       const voiceMessage: Message = {
         id: Date.now().toString(),
         conversation_id: conversation?.id || 'default',
@@ -175,6 +230,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, voiceMessage]);
+      await saveMessage(voiceMessage);
     } else {
       // Start recording
       setIsRecording(true);
@@ -399,7 +455,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               </h2>
               <p className="text-sm text-gray-600 flex items-center">
                 <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
-                Powered by Google Gemini 2.5 Flash
+                Powered by Google Gemini Pro
               </p>
             </div>
             <div className="flex items-center space-x-2">

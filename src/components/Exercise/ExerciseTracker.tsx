@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Activity, Plus, Calendar, Flame, Clock, Target, TrendingUp, Award, Play, Pause, ChevronLeft, ChevronRight, X, Save, Weight, CalendarDays } from 'lucide-react';
 import { WeightTracker } from './WeightTracker';
 import { WorkoutPlanningCalendar } from './WorkoutPlanningCalendar';
+import { DatabaseService } from '../../services/database';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface Workout {
   id: string;
+  user_id: string;
   name: string;
   type: 'cardio' | 'strength' | 'flexibility' | 'sports';
   duration: number;
@@ -16,6 +19,9 @@ interface Workout {
   reps?: number;
   weight?: number;
   distance?: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface HabitTracker {
@@ -91,38 +97,13 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
   const [showAddWorkout, setShowAddWorkout] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
   const [view, setView] = useState<'today' | 'habits' | 'weight' | 'planning'>('today');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  // Mock data
-  const [workouts, setWorkouts] = useState<Workout[]>([
-    {
-      id: '1',
-      name: 'Morning Run',
-      type: 'cardio',
-      duration: 30,
-      calories: 300,
-      date: new Date().toISOString(),
-      completed: true,
-      distance: 3.2
-    },
-    {
-      id: '2',
-      name: 'Strength Training',
-      type: 'strength',
-      duration: 45,
-      calories: 250,
-      date: new Date().toISOString(),
-      completed: false,
-      sets: 3,
-      reps: 12
-    }
-  ]);
-
-  const [habits, setHabits] = useState<HabitTracker[]>([
-    { id: '1', name: 'Water', icon: '💧', streak: 7, target: 8, completed: true, color: 'blue', unit: 'glasses', currentValue: 8 },
-    { id: '2', name: 'Steps', icon: '👟', streak: 5, target: 10000, completed: false, color: 'green', unit: 'steps', currentValue: 7500 },
-    { id: '3', name: 'Sleep', icon: '😴', streak: 3, target: 8, completed: true, color: 'purple', unit: 'hours', currentValue: 8 },
-    { id: '4', name: 'Meditation', icon: '🧘', streak: 2, target: 10, completed: false, color: 'pink', unit: 'minutes', currentValue: 5 }
-  ]);
+  // Data states
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [habits, setHabits] = useState<HabitTracker[]>([]);
 
   const [newHabitForm, setNewHabitForm] = useState<NewHabitForm>({
     name: '',
@@ -137,6 +118,106 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
     totalCalories: 1250,
     totalMinutes: 180,
     avgHeartRate: 145
+  };
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, [userId]);
+
+  const loadData = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        await loadFromDatabase();
+      } else {
+        loadFromLocalStorage();
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      loadFromLocalStorage(); // Fallback to localStorage
+    }
+  };
+
+  const loadFromDatabase = async () => {
+    try {
+      // Load workout sessions
+      const workoutSessions = await DatabaseService.getWorkoutSessions(userId);
+      setWorkouts(workoutSessions);
+
+      // Load habits
+      const userHabits = await DatabaseService.getHabits(userId);
+      const habitsWithTracking = userHabits.map(habit => ({
+        id: habit.id,
+        name: habit.name,
+        icon: habit.icon,
+        streak: 0, // Calculate from habit entries
+        target: habit.target,
+        completed: false, // Calculate from today's entries
+        color: habit.color,
+        unit: habit.unit,
+        currentValue: 0 // Calculate from today's entries
+      }));
+      setHabits(habitsWithTracking);
+    } catch (error) {
+      console.error('Database load error:', error);
+      loadFromLocalStorage();
+    }
+  };
+
+  const loadFromLocalStorage = () => {
+    const savedWorkouts = localStorage.getItem(`workouts-${userId}`);
+    const savedHabits = localStorage.getItem(`habits-${userId}`);
+
+    if (savedWorkouts) {
+      setWorkouts(JSON.parse(savedWorkouts));
+    } else {
+      // Mock data for demonstration
+      const mockWorkouts: Workout[] = [
+        {
+          id: '1',
+          user_id: userId,
+          name: 'Morning Run',
+          type: 'cardio',
+          duration: 30,
+          calories: 300,
+          date: new Date().toISOString().split('T')[0],
+          completed: true,
+          distance: 3.2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          user_id: userId,
+          name: 'Strength Training',
+          type: 'strength',
+          duration: 45,
+          calories: 250,
+          date: new Date().toISOString().split('T')[0],
+          completed: false,
+          sets: 3,
+          reps: 12,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      setWorkouts(mockWorkouts);
+      localStorage.setItem(`workouts-${userId}`, JSON.stringify(mockWorkouts));
+    }
+
+    if (savedHabits) {
+      setHabits(JSON.parse(savedHabits));
+    } else {
+      // Mock habits
+      const mockHabits: HabitTracker[] = [
+        { id: '1', name: 'Water', icon: '💧', streak: 7, target: 8, completed: true, color: 'blue', unit: 'glasses', currentValue: 8 },
+        { id: '2', name: 'Steps', icon: '👟', streak: 5, target: 10000, completed: false, color: 'green', unit: 'steps', currentValue: 7500 },
+        { id: '3', name: 'Sleep', icon: '😴', streak: 3, target: 8, completed: true, color: 'purple', unit: 'hours', currentValue: 8 },
+        { id: '4', name: 'Meditation', icon: '🧘', streak: 2, target: 10, completed: false, color: 'pink', unit: 'minutes', currentValue: 5 }
+      ];
+      setHabits(mockHabits);
+      localStorage.setItem(`habits-${userId}`, JSON.stringify(mockHabits));
+    }
   };
 
   const getWorkoutIcon = (type: string) => {
@@ -159,74 +240,195 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
     }
   };
 
-  const addWorkout = (exercise: ExerciseOption, customData: any) => {
-    const newWorkout: Workout = {
-      id: Date.now().toString(),
-      name: exercise.name,
-      type: exercise.type,
-      duration: customData.duration || exercise.defaultDuration,
-      calories: customData.calories || exercise.estimatedCalories,
-      date: selectedDate.toISOString(),
-      completed: false,
-      ...customData
-    };
-    setWorkouts(prev => [...prev, newWorkout]);
-    setShowAddWorkout(false);
+  const addWorkout = async (exercise: ExerciseOption, customData: any) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const newWorkout = {
+        user_id: userId,
+        name: exercise.name,
+        type: exercise.type,
+        duration: customData.duration || exercise.defaultDuration,
+        calories: customData.calories || exercise.estimatedCalories,
+        date: selectedDate.toISOString().split('T')[0],
+        completed: false,
+        ...customData
+      };
+
+      if (isSupabaseConfigured()) {
+        const savedWorkout = await DatabaseService.createWorkoutSession(newWorkout);
+        setWorkouts(prev => [savedWorkout, ...prev]);
+      } else {
+        const workoutWithId = {
+          id: Date.now().toString(),
+          ...newWorkout,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        setWorkouts(prev => {
+          const updated = [workoutWithId, ...prev];
+          localStorage.setItem(`workouts-${userId}`, JSON.stringify(updated));
+          return updated;
+        });
+      }
+
+      setShowAddWorkout(false);
+      setSuccess('Workout added successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error adding workout:', error);
+      setError('Failed to add workout. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addHabit = () => {
-    if (!newHabitForm.name.trim()) return;
+  const addHabit = async () => {
+    if (!newHabitForm.name.trim()) {
+      setError('Please enter a habit name');
+      return;
+    }
 
-    const newHabit: HabitTracker = {
-      id: Date.now().toString(),
-      name: newHabitForm.name,
-      icon: newHabitForm.icon,
-      target: newHabitForm.target,
-      unit: newHabitForm.unit,
-      color: newHabitForm.color,
-      streak: 0,
-      completed: false,
-      currentValue: 0
-    };
+    setLoading(true);
+    setError('');
 
-    setHabits(prev => [...prev, newHabit]);
-    setNewHabitForm({
-      name: '',
-      icon: '⭐',
-      target: 1,
-      unit: 'times',
-      color: 'blue'
-    });
-    setShowAddHabit(false);
+    try {
+      const newHabit = {
+        user_id: userId,
+        name: newHabitForm.name,
+        icon: newHabitForm.icon,
+        target: newHabitForm.target,
+        unit: newHabitForm.unit,
+        color: newHabitForm.color,
+        active: true
+      };
+
+      if (isSupabaseConfigured()) {
+        const savedHabit = await DatabaseService.createHabit(newHabit);
+        const habitTracker: HabitTracker = {
+          id: savedHabit.id,
+          name: savedHabit.name,
+          icon: savedHabit.icon,
+          target: savedHabit.target,
+          unit: savedHabit.unit,
+          color: savedHabit.color,
+          streak: 0,
+          completed: false,
+          currentValue: 0
+        };
+        setHabits(prev => [...prev, habitTracker]);
+      } else {
+        const habitTracker: HabitTracker = {
+          id: Date.now().toString(),
+          name: newHabitForm.name,
+          icon: newHabitForm.icon,
+          target: newHabitForm.target,
+          unit: newHabitForm.unit,
+          color: newHabitForm.color,
+          streak: 0,
+          completed: false,
+          currentValue: 0
+        };
+        setHabits(prev => {
+          const updated = [...prev, habitTracker];
+          localStorage.setItem(`habits-${userId}`, JSON.stringify(updated));
+          return updated;
+        });
+      }
+
+      setNewHabitForm({
+        name: '',
+        icon: '⭐',
+        target: 1,
+        unit: 'times',
+        color: 'blue'
+      });
+      setShowAddHabit(false);
+      setSuccess('Habit added successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error adding habit:', error);
+      setError('Failed to add habit. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleWorkoutComplete = (workoutId: string) => {
-    setWorkouts(prev => 
-      prev.map(workout => 
-        workout.id === workoutId 
-          ? { ...workout, completed: !workout.completed }
-          : workout
-      )
-    );
+  const toggleWorkoutComplete = async (workoutId: string) => {
+    try {
+      const workout = workouts.find(w => w.id === workoutId);
+      if (!workout) return;
+
+      const updatedWorkout = { ...workout, completed: !workout.completed };
+
+      if (isSupabaseConfigured()) {
+        await DatabaseService.updateWorkoutSession(workoutId, { completed: updatedWorkout.completed });
+      }
+
+      setWorkouts(prev => {
+        const updated = prev.map(w => w.id === workoutId ? updatedWorkout : w);
+        localStorage.setItem(`workouts-${userId}`, JSON.stringify(updated));
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error updating workout:', error);
+      setError('Failed to update workout. Please try again.');
+    }
   };
 
-  const updateHabit = (habitId: string, value: number) => {
-    setHabits(prev => 
-      prev.map(habit => 
-        habit.id === habitId 
-          ? { 
-              ...habit, 
-              currentValue: value,
-              completed: value >= habit.target,
-              streak: value >= habit.target ? habit.streak + 1 : Math.max(0, habit.streak - 1)
-            }
-          : habit
-      )
-    );
+  const updateHabit = async (habitId: string, value: number) => {
+    try {
+      const habit = habits.find(h => h.id === habitId);
+      if (!habit) return;
+
+      const completed = value >= habit.target;
+      const newStreak = completed ? habit.streak + 1 : Math.max(0, habit.streak - 1);
+
+      if (isSupabaseConfigured()) {
+        // Update habit entry for today
+        await DatabaseService.upsertHabitEntry({
+          user_id: userId,
+          habit_id: habitId,
+          date: new Date().toISOString().split('T')[0],
+          value,
+          completed
+        });
+      }
+
+      setHabits(prev => {
+        const updated = prev.map(h => 
+          h.id === habitId 
+            ? { ...h, currentValue: value, completed, streak: newStreak }
+            : h
+        );
+        localStorage.setItem(`habits-${userId}`, JSON.stringify(updated));
+        return updated;
+      });
+    } catch (error) {
+      console.error('Error updating habit:', error);
+      setError('Failed to update habit. Please try again.');
+    }
   };
 
-  const deleteHabit = (habitId: string) => {
-    setHabits(prev => prev.filter(habit => habit.id !== habitId));
+  const deleteHabit = async (habitId: string) => {
+    try {
+      if (isSupabaseConfigured()) {
+        await DatabaseService.deleteHabit(habitId);
+      }
+
+      setHabits(prev => {
+        const updated = prev.filter(h => h.id !== habitId);
+        localStorage.setItem(`habits-${userId}`, JSON.stringify(updated));
+        return updated;
+      });
+
+      setSuccess('Habit deleted successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      setError('Failed to delete habit. Please try again.');
+    }
   };
 
   const AddWorkoutModal = () => (
@@ -246,12 +448,19 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
           </button>
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {EXERCISE_OPTIONS.map((exercise) => (
             <button
               key={exercise.name}
               onClick={() => addWorkout(exercise, {})}
-              className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left"
+              disabled={loading}
+              className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left disabled:opacity-50"
             >
               <div className="flex items-center space-x-3 mb-2">
                 <span className="text-2xl">{exercise.icon}</span>
@@ -287,6 +496,12 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
           </button>
         </div>
 
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg mb-4">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Habit Name</label>
@@ -296,6 +511,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
               onChange={(e) => setNewHabitForm(prev => ({ ...prev, name: e.target.value }))}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="e.g., Read books, Drink water"
+              disabled={loading}
             />
           </div>
 
@@ -311,6 +527,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                       ? 'border-purple-500 bg-purple-50'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
+                  disabled={loading}
                 >
                   {icon}
                 </button>
@@ -327,6 +544,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                 onChange={(e) => setNewHabitForm(prev => ({ ...prev, target: parseInt(e.target.value) || 1 }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 min="1"
+                disabled={loading}
               />
             </div>
 
@@ -336,6 +554,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                 value={newHabitForm.unit}
                 onChange={(e) => setNewHabitForm(prev => ({ ...prev, unit: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                disabled={loading}
               >
                 {HABIT_UNITS.map((unit) => (
                   <option key={unit} value={unit}>{unit}</option>
@@ -356,6 +575,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                       ? 'border-gray-800 scale-110'
                       : 'border-gray-300 hover:scale-105'
                   }`}
+                  disabled={loading}
                 />
               ))}
             </div>
@@ -366,16 +586,26 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
           <button
             onClick={() => setShowAddHabit(false)}
             className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+            disabled={loading}
           >
             Cancel
           </button>
           <button
             onClick={addHabit}
-            disabled={!newHabitForm.name.trim()}
+            disabled={!newHabitForm.name.trim() || loading}
             className="flex items-center space-x-2 px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
-            <span>Add Habit</span>
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span>Adding...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Add Habit</span>
+              </>
+            )}
           </button>
         </div>
       </motion.div>
@@ -384,6 +614,27 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      {/* Success/Error Messages */}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.95 }}
+            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-4 rounded-xl shadow-2xl border border-green-400">
+              <div className="flex items-center space-x-3">
+                <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                  <Save className="w-4 h-4" />
+                </div>
+                <span className="font-medium">{success}</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -495,8 +746,8 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                 <Target className="w-8 h-8 text-emerald-500" />
                 <span className="text-2xl">🎯</span>
               </div>
-              <div className="text-2xl font-bold text-gray-800 mb-1">132</div>
-              <div className="text-sm text-gray-600">Target: 110 lbs</div>
+              <div className="text-2xl font-bold text-gray-800 mb-1">7</div>
+              <div className="text-sm text-gray-600">Day Streak</div>
             </motion.div>
           </div>
 
@@ -522,7 +773,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
               </div>
 
               <div className="space-y-4">
-                {workouts.filter(w => new Date(w.date).toDateString() === new Date().toDateString()).map((workout) => (
+                {workouts.filter(w => w.date === new Date().toISOString().split('T')[0]).map((workout) => (
                   <div
                     key={workout.id}
                     className={`p-4 rounded-lg border-2 transition-all ${
@@ -562,7 +813,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
                     </div>
                   </div>
                 ))}
-                {workouts.filter(w => new Date(w.date).toDateString() === new Date().toDateString()).length === 0 && (
+                {workouts.filter(w => w.date === new Date().toISOString().split('T')[0]).length === 0 && (
                   <div className="text-center py-8 text-gray-500">
                     <Activity className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                     <p>No workouts planned for today</p>

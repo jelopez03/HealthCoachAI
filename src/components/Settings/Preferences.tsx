@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Bell, Palette, Volume2, Shield, Smartphone, Save } from 'lucide-react';
+import { Settings, Bell, Palette, Volume2, Shield, Smartphone, Save, CheckCircle, AlertCircle } from 'lucide-react';
+import { DatabaseService } from '../../services/database';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface PreferencesState {
   notifications: {
@@ -65,14 +67,73 @@ export const Preferences: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
+
+  // Mock user ID for open access demo
+  const userId = 'open-access-user';
+
+  // Load preferences on component mount
+  useEffect(() => {
+    loadPreferences();
+  }, []);
+
+  const loadPreferences = async () => {
+    try {
+      if (isSupabaseConfigured()) {
+        const userPreferences = await DatabaseService.getUserPreferences(userId);
+        if (userPreferences) {
+          setPreferences({
+            notifications: userPreferences.notifications || preferences.notifications,
+            appearance: userPreferences.appearance || preferences.appearance,
+            privacy: userPreferences.privacy || preferences.privacy,
+            coaching: userPreferences.coaching || preferences.coaching,
+            audio: userPreferences.audio || preferences.audio
+          });
+        }
+      } else {
+        // Load from localStorage
+        const savedPreferences = localStorage.getItem('user-preferences');
+        if (savedPreferences) {
+          setPreferences(JSON.parse(savedPreferences));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading preferences:', error);
+      // Fallback to localStorage
+      const savedPreferences = localStorage.getItem('user-preferences');
+      if (savedPreferences) {
+        setPreferences(JSON.parse(savedPreferences));
+      }
+    }
+  };
 
   const handleSave = async () => {
     setLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
-    setSuccess(true);
-    setTimeout(() => setSuccess(false), 3000);
+    setError('');
+
+    try {
+      if (isSupabaseConfigured()) {
+        await DatabaseService.upsertUserPreferences({
+          user_id: userId,
+          notifications: preferences.notifications,
+          appearance: preferences.appearance,
+          privacy: preferences.privacy,
+          coaching: preferences.coaching,
+          audio: preferences.audio
+        });
+      }
+
+      // Also save to localStorage as backup
+      localStorage.setItem('user-preferences', JSON.stringify(preferences));
+
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      setError('Failed to save preferences. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updatePreference = (section: keyof PreferencesState, key: string, value: any) => {
@@ -202,8 +263,22 @@ export const Preferences: React.FC = () => {
           className="bg-green-50 border-l-4 border-green-400 p-4 mb-6 rounded-lg"
         >
           <div className="flex items-center">
-            <Save className="w-5 h-5 text-green-400 mr-2" />
+            <CheckCircle className="w-5 h-5 text-green-400 mr-2" />
             <p className="text-green-700 font-medium">Preferences saved successfully!</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 rounded-lg"
+        >
+          <div className="flex items-center">
+            <AlertCircle className="w-5 h-5 text-red-400 mr-2" />
+            <p className="text-red-700 font-medium">{error}</p>
           </div>
         </motion.div>
       )}
