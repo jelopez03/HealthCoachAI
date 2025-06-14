@@ -435,7 +435,7 @@ export const ProgressDashboard: React.FC = () => {
       <WelcomeCard />
 
       {/* Main Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Calories"
           value="1520"
@@ -469,7 +469,7 @@ export const ProgressDashboard: React.FC = () => {
           trendValue="Normal"
           chart={<MiniChart data={[70, 65, 75, 68, 72, 69, 71]} color="bg-pink-200" />}
         />
-      </div>
+      </motion.div>
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -608,7 +608,7 @@ export const ProgressDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
