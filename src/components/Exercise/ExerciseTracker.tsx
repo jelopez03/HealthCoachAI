@@ -90,7 +90,7 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
   const [workoutTimer, setWorkoutTimer] = useState(0);
   const [showAddWorkout, setShowAddWorkout] = useState(false);
   const [showAddHabit, setShowAddHabit] = useState(false);
-  const [view, setView] = useState<'today' | 'calendar' | 'habits' | 'weight' | 'planning'>('today');
+  const [view, setView] = useState<'today' | 'habits' | 'weight' | 'planning'>('today');
 
   // Mock data
   const [workouts, setWorkouts] = useState<Workout[]>([
@@ -157,19 +157,6 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
       case 'sports': return 'from-green-500 to-emerald-500';
       default: return 'from-gray-500 to-gray-600';
     }
-  };
-
-  const getDaysInMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-  };
-
-  const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-  };
-
-  const getWorkoutsForDate = (date: Date) => {
-    const dateStr = date.toDateString();
-    return workouts.filter(workout => new Date(workout.date).toDateString() === dateStr);
   };
 
   const addWorkout = (exercise: ExerciseOption, customData: any) => {
@@ -240,61 +227,6 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
 
   const deleteHabit = (habitId: string) => {
     setHabits(prev => prev.filter(habit => habit.id !== habitId));
-  };
-
-  const renderCalendar = () => {
-    const daysInMonth = getDaysInMonth(currentMonth);
-    const firstDay = getFirstDayOfMonth(currentMonth);
-    const days = [];
-
-    // Empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-24"></div>);
-    }
-
-    // Days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-      const dayWorkouts = getWorkoutsForDate(date);
-      const isToday = date.toDateString() === new Date().toDateString();
-      const isSelected = date.toDateString() === selectedDate.toDateString();
-
-      days.push(
-        <div
-          key={day}
-          onClick={() => setSelectedDate(date)}
-          className={`h-24 p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-            isToday ? 'bg-blue-50 border-blue-300' : ''
-          } ${isSelected ? 'bg-blue-100 border-blue-400' : ''}`}
-        >
-          <div className="flex justify-between items-start mb-1">
-            <span className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>
-              {day}
-            </span>
-            {dayWorkouts.length > 0 && (
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            )}
-          </div>
-          <div className="space-y-1">
-            {dayWorkouts.slice(0, 2).map(workout => (
-              <div
-                key={workout.id}
-                className={`text-xs px-1 py-0.5 rounded truncate ${
-                  workout.completed ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                }`}
-              >
-                {workout.name}
-              </div>
-            ))}
-            {dayWorkouts.length > 2 && (
-              <div className="text-xs text-gray-500">+{dayWorkouts.length - 2} more</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return days;
   };
 
   const AddWorkoutModal = () => (
@@ -481,7 +413,6 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
       <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-8">
         {[
           { id: 'today', label: 'Today', icon: Activity },
-          { id: 'calendar', label: 'Calendar', icon: Calendar },
           { id: 'habits', label: 'Habits', icon: Target },
           { id: 'weight', label: 'Weight Log', icon: Weight },
           { id: 'planning', label: 'Workout Planning', icon: CalendarDays }
@@ -683,80 +614,6 @@ export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
               </div>
             </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* Calendar View */}
-      {view === 'calendar' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-800">
-                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setCurrentMonth(new Date())}
-                  className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
-                  Today
-                </button>
-                <button
-                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1 mb-4">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                <div key={day} className="p-2 text-center text-sm font-medium text-gray-600">
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 gap-1">
-              {renderCalendar()}
-            </div>
-          </div>
-
-          {/* Selected Date Workouts */}
-          {getWorkoutsForDate(selectedDate).length > 0 && (
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                Workouts for {selectedDate.toLocaleDateString()}
-              </h3>
-              <div className="space-y-3">
-                {getWorkoutsForDate(selectedDate).map(workout => (
-                  <div key={workout.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                    <div className={`w-10 h-10 bg-gradient-to-r ${getWorkoutColor(workout.type)} rounded-full flex items-center justify-center text-white`}>
-                      {getWorkoutIcon(workout.type)}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-800">{workout.name}</h4>
-                      <p className="text-sm text-gray-600">
-                        {workout.duration} min • {workout.calories} cal
-                      </p>
-                    </div>
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
-                      workout.completed ? 'bg-green-500' : 'bg-gray-300'
-                    }`}>
-                      {workout.completed && <span className="text-white text-xs">✓</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       )}
 
