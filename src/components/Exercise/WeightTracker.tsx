@@ -28,7 +28,11 @@ interface WeightStats {
   bmiCategory: string;
 }
 
-export const WeightTracker: React.FC = () => {
+interface WeightTrackerProps {
+  userId: string;
+}
+
+export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
   const [entries, setEntries] = useState<WeightEntry[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showGoalModal, setShowGoalModal] = useState(false);
@@ -58,8 +62,6 @@ export const WeightTracker: React.FC = () => {
   });
 
   const [userHeight, setUserHeight] = useState({ feet: 5, inches: 8 }); // Default height for BMI
-
-  const userId = 'open-access-user'; // For demo purposes
 
   // Load data from database or localStorage on mount
   useEffect(() => {

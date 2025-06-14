@@ -13,14 +13,6 @@ import { PremiumUpgrade } from './components/Premium/PremiumUpgrade';
 import { WalkthroughModal } from './components/Onboarding/WalkthroughModal';
 import type { Conversation, User, UserProfile } from './types';
 
-// Create a mock user for open access
-const mockUser: User = {
-  id: 'open-access-user',
-  email: 'user@healthcoach.ai',
-  created_at: new Date().toISOString(),
-  subscription_status: 'premium' // Give premium access for testing
-};
-
 // Helper function to generate valid UUIDs for mock data
 const generateMockUUID = () => {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -28,6 +20,14 @@ const generateMockUUID = () => {
     const v = c == 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+};
+
+// Create a mock user for open access
+const mockUser: User = {
+  id: generateMockUUID(), // Use generated UUID instead of hardcoded string
+  email: 'user@healthcoach.ai',
+  created_at: new Date().toISOString(),
+  subscription_status: 'premium' // Give premium access for testing
 };
 
 const App: React.FC = () => {
@@ -185,7 +185,7 @@ const App: React.FC = () => {
       case 'analytics':
         return <ProgressDashboard />;
       case 'exercise':
-        return <ExerciseTracker />;
+        return <ExerciseTracker userId={mockUser.id} />;
       case 'photo-analysis':
         return <PhotoAnalysis />;
       case 'grocery-list':

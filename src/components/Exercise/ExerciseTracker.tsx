@@ -45,6 +45,10 @@ interface NewHabitForm {
   color: string;
 }
 
+interface ExerciseTrackerProps {
+  userId: string;
+}
+
 const EXERCISE_OPTIONS: ExerciseOption[] = [
   // Cardio
   { name: 'Running', type: 'cardio', defaultDuration: 30, estimatedCalories: 300, icon: '🏃‍♂️' },
@@ -78,7 +82,7 @@ const HABIT_ICONS = ['💧', '👟', '😴', '🧘', '📚', '🥗', '🏃', '�
 const HABIT_COLORS = ['blue', 'green', 'purple', 'pink', 'orange', 'red', 'yellow', 'indigo', 'teal', 'cyan'];
 const HABIT_UNITS = ['glasses', 'steps', 'hours', 'minutes', 'times', 'pages', 'servings', 'miles', 'reps', 'sets'];
 
-export const ExerciseTracker: React.FC = () => {
+export const ExerciseTracker: React.FC<ExerciseTrackerProps> = ({ userId }) => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [activeWorkout, setActiveWorkout] = useState<string | null>(null);
@@ -496,7 +500,7 @@ export const ExerciseTracker: React.FC = () => {
       </div>
 
       {/* Weight Tracker View */}
-      {view === 'weight' && <WeightTracker />}
+      {view === 'weight' && <WeightTracker userId={userId} />}
 
       {/* Today View */}
       {view === 'today' && (
