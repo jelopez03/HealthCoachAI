@@ -38,6 +38,12 @@ interface ProgressData {
   heartRate: number;
 }
 
+interface WeightData {
+  date: string;
+  weight: number;
+  change: number;
+}
+
 interface WeeklyStats {
   totalWorkouts: number;
   totalCalories: number;
@@ -57,6 +63,24 @@ export const ProgressDashboard: React.FC = () => {
   // Get user name from profile or default
   const userName = profile?.name || "Jane Smith";
   
+  // Mock weight tracking data (daily for the past 2 weeks)
+  const weightData: WeightData[] = [
+    { date: '2024-02-26', weight: 162.4, change: 0 },
+    { date: '2024-02-27', weight: 162.1, change: -0.3 },
+    { date: '2024-02-28', weight: 161.8, change: -0.3 },
+    { date: '2024-02-29', weight: 161.5, change: -0.3 },
+    { date: '2024-03-01', weight: 161.2, change: -0.3 },
+    { date: '2024-03-02', weight: 160.9, change: -0.3 },
+    { date: '2024-03-03', weight: 160.6, change: -0.3 },
+    { date: '2024-03-04', weight: 160.3, change: -0.3 },
+    { date: '2024-03-05', weight: 160.0, change: -0.3 },
+    { date: '2024-03-06', weight: 159.7, change: -0.3 },
+    { date: '2024-03-07', weight: 159.4, change: -0.3 },
+    { date: '2024-03-08', weight: 159.1, change: -0.3 },
+    { date: '2024-03-09', weight: 158.8, change: -0.3 },
+    { date: '2024-03-10', weight: 158.5, change: -0.3 }
+  ];
+
   // Mock progress data
   const progressData: ProgressData[] = [
     { date: '2024-03-01', weight: 159.8, calories: 1520, water: 2.1, steps: 2581, workouts: 1, sleep: 7.5, heartRate: 72 },
@@ -197,7 +221,7 @@ export const ProgressDashboard: React.FC = () => {
     </motion.div>
   );
 
-  const ActivityChart = () => (
+  const WeightTrackingChart = () => (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -206,43 +230,110 @@ export const ProgressDashboard: React.FC = () => {
     >
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-800">Fitness Activity</h3>
-          <p className="text-gray-600 text-sm">Weekly performance overview</p>
+          <h3 className="text-lg font-semibold text-gray-800">Weight Tracking</h3>
+          <p className="text-gray-600 text-sm">Daily weight progress over time</p>
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <span className="text-gray-600">Walk</span>
+            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+            <span className="text-gray-600">Weight (lbs)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-            <span className="text-gray-600">Running</span>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-gray-600">Goal: 155 lbs</span>
           </div>
         </div>
       </div>
       
-      {/* Chart */}
-      <div className="h-64 flex items-end justify-between space-x-2">
-        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day, index) => {
-          const walkHeight = Math.random() * 60 + 20;
-          const runHeight = Math.random() * 40 + 10;
-          
-          return (
-            <div key={day} className="flex-1 flex flex-col items-center">
-              <div className="w-full flex flex-col items-center space-y-1 mb-2">
+      {/* Weight Chart */}
+      <div className="h-64 relative">
+        {/* Y-axis labels */}
+        <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 -ml-8">
+          <span>163</span>
+          <span>161</span>
+          <span>159</span>
+          <span>157</span>
+          <span>155</span>
+        </div>
+        
+        {/* Chart area */}
+        <div className="h-full flex items-end justify-between space-x-1 ml-4">
+          {weightData.map((data, index) => {
+            // Calculate position based on weight range (155-163 lbs)
+            const minWeight = 155;
+            const maxWeight = 163;
+            const heightPercentage = ((data.weight - minWeight) / (maxWeight - minWeight)) * 100;
+            
+            return (
+              <div key={index} className="flex-1 flex flex-col items-center relative group">
+                {/* Data point */}
                 <div 
-                  className="w-8 bg-green-500 rounded-t-lg transition-all duration-1000 ease-out"
-                  style={{ height: `${walkHeight}%` }}
-                ></div>
-                <div 
-                  className="w-8 bg-orange-500 rounded-t-lg transition-all duration-1000 ease-out"
-                  style={{ height: `${runHeight}%` }}
-                ></div>
+                  className="w-full flex justify-center items-end transition-all duration-1000 ease-out"
+                  style={{ height: `${heightPercentage}%` }}
+                >
+                  <div className="w-3 h-3 bg-purple-500 rounded-full relative">
+                    {/* Tooltip */}
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                      {data.weight} lbs
+                      {data.change !== 0 && (
+                        <div className={`text-xs ${data.change > 0 ? 'text-red-300' : 'text-green-300'}`}>
+                          {data.change > 0 ? '+' : ''}{data.change.toFixed(1)} lbs
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Connect points with line */}
+                {index < weightData.length - 1 && (
+                  <svg 
+                    className="absolute top-0 left-1/2 w-full h-full pointer-events-none"
+                    style={{ transform: 'translateX(-50%)' }}
+                  >
+                    <line
+                      x1="50%"
+                      y1={`${100 - heightPercentage}%`}
+                      x2="150%"
+                      y2={`${100 - ((weightData[index + 1].weight - minWeight) / (maxWeight - minWeight)) * 100}%`}
+                      stroke="#8b5cf6"
+                      strokeWidth="2"
+                      className="transition-all duration-1000 ease-out"
+                    />
+                  </svg>
+                )}
+                
+                {/* Date label */}
+                <span className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-center">
+                  {new Date(data.date).getDate()}/{new Date(data.date).getMonth() + 1}
+                </span>
               </div>
-              <span className="text-xs text-gray-600 font-medium">{day}</span>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        
+        {/* Goal line */}
+        <div 
+          className="absolute left-4 right-0 border-t-2 border-dashed border-green-500 opacity-50"
+          style={{ bottom: `${((155 - 155) / (163 - 155)) * 100}%` }}
+        >
+          <span className="absolute right-0 -top-6 text-xs text-green-600 font-medium">Goal: 155 lbs</span>
+        </div>
+      </div>
+      
+      {/* Chart summary */}
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <TrendingDown className="w-4 h-4 text-green-500" />
+            <span className="text-green-600 font-medium">-3.9 lbs total</span>
+          </div>
+          <div className="text-gray-600">
+            Current: {weightData[weightData.length - 1].weight} lbs
+          </div>
+        </div>
+        <div className="text-gray-500">
+          Last 14 days
+        </div>
       </div>
     </motion.div>
   );
@@ -394,7 +485,7 @@ export const ProgressDashboard: React.FC = () => {
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <ActivityChart />
+          <WeightTrackingChart />
         </div>
         <ReportsCard />
       </div>
@@ -416,7 +507,7 @@ export const ProgressDashboard: React.FC = () => {
             </div>
           </div>
           <div className="text-2xl font-bold text-gray-800 mb-1">
-            {profile?.weight || 157.2}
+            {profile?.weight || 158.5}
           </div>
           <div className="text-gray-600 text-sm">Current Weight (lbs)</div>
         </motion.div>
@@ -514,7 +605,7 @@ export const ProgressDashboard: React.FC = () => {
             </div>
             <div>
               <p className="font-medium text-gray-800">Weight Goal</p>
-              <p className="text-sm text-gray-600">Lost 2.6 lbs this week</p>
+              <p className="text-sm text-gray-600">Lost 3.9 lbs in 2 weeks</p>
             </div>
           </div>
           
