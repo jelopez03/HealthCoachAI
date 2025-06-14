@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2, Video, Volume2, FileText, Utensils, Sparkles, Brain, Target, MessageSquare, Plus, Trash2, Edit3, Paperclip, Mic, Upload } from 'lucide-react';
+import { Send, Loader2, Video, Volume2, FileText, Utensils, Sparkles, Brain, Target, MessageSquare, Plus, Trash2, Edit3, Paperclip, Mic, Upload, AlertCircle } from 'lucide-react';
 import type { Message, Conversation, UserProfile } from '../../types';
 import { MessageBubble } from './MessageBubble';
 import { VideoPlayer } from './VideoPlayer';
@@ -33,6 +33,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -52,6 +53,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
   useEffect(() => {
     if (conversation) {
       loadMessages();
+      setErrorMessage(null); // Clear any error when a conversation is selected
     } else {
       setMessages([]);
     }
@@ -111,6 +113,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
       localStorage.setItem(`messages-${conversationId}`, JSON.stringify(updatedMessages));
     } catch (error) {
       console.error('Error saving message:', error);
+      throw error; // Re-throw to handle in calling function
     }
   };
 
@@ -118,10 +121,17 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
     e.preventDefault();
     if (!inputMessage.trim() || loading) return;
 
+    // Check if Supabase is configured and no conversation is selected
+    if (isSupabaseConfigured() && !conversation) {
+      setErrorMessage('Please start a new conversation before sending messages.');
+      return;
+    }
+
     const messageText = inputMessage.trim();
     setInputMessage('');
     setLoading(true);
     setIsTyping(true);
+    setErrorMessage(null); // Clear any previous errors
 
     try {
       // Add user message to UI immediately
@@ -191,6 +201,12 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
   };
 
   const handleFileAttachment = () => {
+    // Check if Supabase is configured and no conversation is selected
+    if (isSupabaseConfigured() && !conversation) {
+      setErrorMessage('Please start a new conversation before attaching files.');
+      return;
+    }
+    
     fileInputRef.current?.click();
   };
 
@@ -209,13 +225,23 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, fileMessage]);
-      await saveMessage(fileMessage);
+      try {
+        await saveMessage(fileMessage);
+      } catch (error) {
+        console.error('Error saving file message:', error);
+      }
     }
     // Reset the input
     event.target.value = '';
   };
 
   const handleVoiceMessage = async () => {
+    // Check if Supabase is configured and no conversation is selected
+    if (isSupabaseConfigured() && !conversation) {
+      setErrorMessage('Please start a new conversation before recording voice messages.');
+      return;
+    }
+
     if (isRecording) {
       // Stop recording
       setIsRecording(false);
@@ -230,7 +256,11 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
         created_at: new Date().toISOString()
       };
       setMessages(prev => [...prev, voiceMessage]);
-      await saveMessage(voiceMessage);
+      try {
+        await saveMessage(voiceMessage);
+      } catch (error) {
+        console.error('Error saving voice message:', error);
+      }
     } else {
       // Start recording
       setIsRecording(true);
@@ -465,6 +495,28 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
           </div>
         </div>
 
+        {/* Error Message */}
+        {errorMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-6 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3"
+          >
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-red-800 font-medium">Unable to send message</p>
+              <p className="text-red-600 text-sm">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="text-red-500 hover:text-red-700 transition-colors"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           {/* Quick prompts for empty conversation */}
@@ -482,7 +534,13 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    onClick={() => setInputMessage(prompt.text)}
+                    onClick={() => {
+                      if (isSupabaseConfigured() && !conversation) {
+                        setErrorMessage('Please start a new conversation before sending messages.');
+                        return;
+                      }
+                      setInputMessage(prompt.text);
+                    }}
                     className={`p-3 rounded-lg border-2 ${prompt.borderColor} ${prompt.bgColor} ${prompt.hoverBgColor} transition-all text-left group`}
                   >
                     <div className="flex items-center space-x-2">
@@ -615,7 +673,7 @@ ${userProfile ? `I can see you're focused on ${userProfile.health_goals?.join(',
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               type="submit"
-              disabled={loading || !inputMessage.trim()}
+              disabled={loading || !inputMessage.trim() || (isSupabaseConfigured() && !conversation)}
               className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-sky-500 to-emerald-500 text-white rounded-full hover:from-sky-600 hover:to-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
             >
               {loading ? (
