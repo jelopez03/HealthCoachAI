@@ -113,7 +113,7 @@ export const WeightTracker: React.FC<WeightTrackerProps> = ({ userId }) => {
         .from('user_profiles')
         .select('height_feet, height_inches')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (profileData) {
         setUserHeight({
