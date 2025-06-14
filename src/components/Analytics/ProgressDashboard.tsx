@@ -235,17 +235,17 @@ export const ProgressDashboard: React.FC = () => {
         </div>
         <div className="flex items-center space-x-4 text-sm">
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
             <span className="text-gray-600">Weight (lbs)</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
             <span className="text-gray-600">Goal: 155 lbs</span>
           </div>
         </div>
       </div>
       
-      {/* Weight Chart */}
+      {/* Weight Bar Chart */}
       <div className="h-64 relative">
         {/* Y-axis labels */}
         <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-500 -ml-8">
@@ -257,7 +257,7 @@ export const ProgressDashboard: React.FC = () => {
         </div>
         
         {/* Chart area */}
-        <div className="h-full flex items-end justify-between space-x-1 ml-4">
+        <div className="h-full flex items-end justify-between space-x-2 ml-4">
           {weightData.map((data, index) => {
             // Calculate position based on weight range (155-163 lbs)
             const minWeight = 155;
@@ -266,41 +266,30 @@ export const ProgressDashboard: React.FC = () => {
             
             return (
               <div key={index} className="flex-1 flex flex-col items-center relative group">
-                {/* Data point */}
-                <div 
-                  className="w-full flex justify-center items-end transition-all duration-1000 ease-out"
-                  style={{ height: `${heightPercentage}%` }}
-                >
-                  <div className="w-3 h-3 bg-purple-500 rounded-full relative">
-                    {/* Tooltip */}
-                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                      {data.weight} lbs
-                      {data.change !== 0 && (
-                        <div className={`text-xs ${data.change > 0 ? 'text-red-300' : 'text-green-300'}`}>
-                          {data.change > 0 ? '+' : ''}{data.change.toFixed(1)} lbs
-                        </div>
-                      )}
-                    </div>
+                {/* Weight value on top of bar */}
+                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                    {data.weight} lbs
+                    {data.change !== 0 && (
+                      <div className={`text-xs ${data.change > 0 ? 'text-red-300' : 'text-green-300'}`}>
+                        {data.change > 0 ? '+' : ''}{data.change.toFixed(1)} lbs
+                      </div>
+                    )}
                   </div>
                 </div>
                 
-                {/* Connect points with line */}
-                {index < weightData.length - 1 && (
-                  <svg 
-                    className="absolute top-0 left-1/2 w-full h-full pointer-events-none"
-                    style={{ transform: 'translateX(-50%)' }}
-                  >
-                    <line
-                      x1="50%"
-                      y1={`${100 - heightPercentage}%`}
-                      x2="150%"
-                      y2={`${100 - ((weightData[index + 1].weight - minWeight) / (maxWeight - minWeight)) * 100}%`}
-                      stroke="#8b5cf6"
-                      strokeWidth="2"
-                      className="transition-all duration-1000 ease-out"
-                    />
-                  </svg>
-                )}
+                {/* Bar */}
+                <div 
+                  className="w-full bg-gradient-to-t from-purple-500 to-purple-400 rounded-t-md transition-all duration-1000 ease-out hover:from-purple-600 hover:to-purple-500 cursor-pointer"
+                  style={{ height: `${heightPercentage}%`, minHeight: '20px' }}
+                >
+                  {/* Weight value inside bar */}
+                  <div className="flex items-end justify-center h-full pb-2">
+                    <span className="text-white text-xs font-medium transform -rotate-90 origin-center">
+                      {data.weight}
+                    </span>
+                  </div>
+                </div>
                 
                 {/* Date label */}
                 <span className="text-xs text-gray-500 mt-2 transform -rotate-45 origin-center">
@@ -619,7 +608,7 @@ export const ProgressDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 };
